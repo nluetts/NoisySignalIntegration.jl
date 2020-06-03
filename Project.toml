@@ -1,0 +1,14 @@
+name = "MCIntegrate"
+uuid = "33634b1f-0925-408d-b97d-6a84dda906b0"
+authors = ["Nils Luettschwager <luettschwager@mailbox.org>"]
+version = "0.1.0"
+
+[deps]
+Debugger = "31a5f54b-26ea-5ae9-a837-f05ce5417438"
+Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
+LsqFit = "2fda8390-95c7-5789-9bda-21331edee243"
+Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
+Polynomials = "f27b6e38-b328-58d1-80ce-0feddd5e7a45"
+Printf = "de0858da-6303-5e67-8744-51eddeeeb8d7"
+Revise = "295af30f-e4ad-537b-8983-00126c2a3abe"
+StatsBase = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"
