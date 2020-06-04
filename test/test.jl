@@ -37,6 +37,12 @@ slc_noise = crop(spec, 40.0, 100.0)
 
 plot(slc_bands, alpha=0.5) |> (x -> plot!(x, slc_noise, alpha=0.5))
 
-##
+## fit noise and plot
 
-noise_sample = NoiseSample(slc_noise)
+noise_sample = NoiseSample(slc_noise; detrend_order=3)
+noise_fit = NoiseFit(noise_sample)
+
+plot(noise_fit)
+
+## 
+plot_samples(noise_fit, 3)

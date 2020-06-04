@@ -47,9 +47,10 @@ end
 """
 #TODO
 """
-struct NoiseSample{T<:AbstractFloat}
+struct NoiseSample{T} <: AbstractSpectrum{T}
     
-    spectrum::Spectrum{T}
+    x::Array{T, 1}
+    y::Array{T, 1}
     lags::Array{T, 1}
     autocov::Array{T, 1}
 
@@ -66,37 +67,17 @@ struct NoiseSample{T<:AbstractFloat}
         end
         lags = δx .* lag_units
         acov = autocov(noise_sample_y, lag_units)
-        return new{T}(Spectrum(s.x, noise_sample_y), lags, acov)
+        return new{T}(s.x, noise_sample_y, lags, acov)
     end
 end
 
-Base.length(n::NoiseSample) = length(n.spectrum)
-
-function Base.show(io::IO, n::NoiseSample{T}) where {T}
-    println("NoiseSample holding")
-    show(io, n.spectrum) 
+function plot_autocov!(p::Plots.Plot, ns::NoiseSample, args...; kw...) 
+    p = plot!(p, ns.lags, ns.autocov, args...; label="autocovariance", kw...)
+    xlabel!(p, "lag")
+    ylabel!(p, "autocovariance")
+    return p
 end
-
-Plots.plot!(p::Plots.Plot, ns::NoiseSample, args...; kw...) = plot!(p, ns.spectrum, args...; kw...)
-Plots.plot(ns::NoiseSample, args...; kw...) = plot!(plot(), ns, args...; kw...)
-
-
-"""
-    NoiseParameters(sample::NoiseSample{T}, α::T, λ::T) where {T<:AbstractFloat}
-
-Datatype holding a noise sample and the noise amplitude `α`
-and autocovariance lag `λ`.
-"""
-struct NoiseParameters{T<:AbstractFloat}
-    sample::NoiseSample{T}
-    α::T
-    λ::T
-end
-
-function Base.show(io::IO, np::NoiseParameters{T}) where {T}
-    println("NoiseParameters{$T} for sample with $(length(np.sample.spectrum)) datapoints:")
-    println("α = $(np.α), λ = $(np.λ)")
-end
+plot_autocov(ns::NoiseSample, args...; kw...) = plot_autocov!(plot(), ns, args...; kw...)
 
 # fit function for noise autocorrelation
 function gauss_kernel(Δx, β)
@@ -105,37 +86,56 @@ function gauss_kernel(Δx, β)
 end
 
 """
-    fit_noise(ns::NoiseSample; α_guess=1.0, λ_guess=1.0) :: NoiseParameters
+    NoiseFit{T<:AbstractFloat}
 
-Estimate parameters α and λ of the exponentiated quadratic covariance function
+Results of fitting autocovariance of a noise sample with a Gaussian kernel.
+
+# Fields
+- `sample::NoiseSample`
+- `α::AbstractFloat`: amplitude
+- `λ::AbstractFloat`: lag
+
+# Constructor
+    NoiseFit(ns::NoiseSample{T}; α_guess::T=1.0, λ_guess::T=1.0) where {T<:AbstractFloat}
+
+Estimates parameters α and λ of the exponentiated quadratic covariance function
 k(Δx) = α² exp(-0.5 (Δx/λ)²) by fitting the estimated autocovaraiance of the
 noise sample `ns`.
 
 Note: Change initial guess if fit does not converge to sensible result.
 """
-function fit_noise(ns::NoiseSample; α_guess=1.0, λ_guess=1.0) :: NoiseParameters
-    fit = curve_fit(gauss_kernel, ns.lags, ns.autocov, [α_guess, λ_guess])
-    return NoiseParameters(ns, fit.param...)
+struct NoiseFit{T<:AbstractFloat}
+    sample::NoiseSample{T}
+    α::T
+    λ::T
+    function NoiseFit(ns::NoiseSample{T}; α_guess=1.0, λ_guess=1.0) where {T}
+        fit = curve_fit(gauss_kernel, ns.lags, ns.autocov, [α_guess, λ_guess])
+        return new{T}(ns, fit.param...)
+    end
 end
 
-function Plots.plot!(p::Plots.Plot, np::NoiseParameters, args...; kw...)
-    kw_exp = merge(Dict(:label => "autocovariance"), kw)
+function Base.show(io::IO, np::NoiseFit{T}) where {T}
+    println("NoiseFit{$T} for sample with $(length(np.sample)) datapoints:")
+    println("α = $(np.α), λ = $(np.λ)")
+end
+
+function Plots.plot!(p::Plots.Plot, np::NoiseFit, args...; kw...)
     fitlabel = @sprintf "fit (α = %.3e, λ = %.3e)" np.α np.λ
-    kw_fit = merge(kw, Dict(:label => fitlabel))
-    plot!(p, np.sample.lags, np.sample.autocov, args...; kw_exp...)
-    β = [np.α, np.λ]
-    plot!(p, np.sample.lags, gauss_kernel(np.sample.lags, β), args...; kw_fit...)
-    xlabel!(p, "lag")
-    ylabel!(p, "autocovariance")
+    plot_autocov!(p, np.sample, args...; kw...)
+    fity = begin
+        β = [np.α, np.λ]
+        gauss_kernel(np.sample.lags, β)
+    end
+    plot!(p, np.sample.lags, fity, args...; kw..., label=fitlabel)
     return p
 end
-Plots.plot(np::NoiseParameters) = plot!(plot(), np)
+Plots.plot(np::NoiseFit) = plot!(plot(), np)
 
 ## functions to sample noise and plot result
 
 function sample(
-    np::NoiseParameters,
-    s::Spectrum;
+    np::NoiseFit,
+    s::AbstractSpectrum;
     n::Int64=1,
     seed::Union{Nothing, Int64}=nothing
 )
@@ -145,12 +145,12 @@ function sample(
     return samples
 end
 
-function sample(np::NoiseParameters; n::Int64=1, seed::Union{Nothing, Int64}=nothing)
-    sample(np, np.sample.spectrum; n=n, seed=seed)
+function sample(np::NoiseFit; n::Int64=1, seed::Union{Nothing, Int64}=nothing)
+    sample(np, np.sample; n=n, seed=seed)
 end
 
 function plot_samples(
-    ns::NoiseParameters,
+    ns::NoiseFit,
     n_samples::Integer,
     args...;
     seed::Union{Nothing, Int64}=nothing,
@@ -158,8 +158,8 @@ function plot_samples(
 )
     n_samples < 0 && throw(ArgumentError("Number of samples must be > 0."))
     p = plot(ns.sample, args..., label="experimental", kw...)
-    y = ns.sample.spectrum.y
-    x = ns.sample.spectrum.x
+    y = ns.sample.y
+    x = ns.sample.x
     span = maximum(y) - minimum(y)
     ss = sample(ns; n=n_samples, seed=seed)
     for (i, s) in enumerate(eachcol(ss))
