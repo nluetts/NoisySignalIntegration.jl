@@ -13,7 +13,7 @@ include("spectrum.jl")
 #include("analyze.jl")
 include("noise.jl")
 #include("integration.jl")
-export NoiseFit, NoiseSample, Spectrum, crop, fit_noise, get_cov, plot, plot_autocov, plot_samples, sample
+export Noise, GaussianNoiseModel, MvGaussianNoiseModel, Spectrum, crop, fit_noise, get_cov, plot, plot_autocov, sample, estimate_autocov
 
 # dev export
 export allapproxequal, detrend

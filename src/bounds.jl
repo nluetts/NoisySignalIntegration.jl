@@ -1,3 +1,8 @@
+
+#######################################################
+### helper functions ##################################
+#######################################################
+
 """
    draw_from_beta(draws, μ, s)
 
@@ -9,3 +14,4 @@ Return values are shifted by μ and scaled by s and fall in the interval
 function draw_from_beta(draws, μ, s) :: Vector{Float64}
     (rand(Beta(2.0, 2.0), draws) .- 0.5) .* s .+ μ
 end
+

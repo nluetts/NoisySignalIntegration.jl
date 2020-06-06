@@ -6,7 +6,7 @@ using MCIntegrate
 
 
 ## Imports
-using Distributions
+using Distributions: MvNormal
 using Plots
 using Random
 
@@ -24,7 +24,9 @@ function get_test_spectrum(seed)
     x = collect(0:0.1:100)
     y = @. exp(-(x-15)^2) + 2 * exp(-(x-30)^2)
     @. y += 1.0 + x*1.5e-2 - (x-50)^3*3e-6
-    return Spectrum(x, y .+ (get_cov(x, 0.1, 0.5) |> MvNormal |> rand))
+    n = length(x)
+    δx = x[2] - x[1] 
+    return Spectrum(x, y .+ (get_cov(δx, n, 0.1, 0.5) |> MvNormal |> rand))
 end
 
 spec = get_test_spectrum(1)
@@ -39,10 +41,14 @@ plot(slc_bands, alpha=0.5) |> (x -> plot!(x, slc_noise, alpha=0.5))
 
 ## fit noise and plot
 
-noise_sample = NoiseSample(slc_noise; detrend_order=3)
-noise_fit = NoiseFit(noise_sample)
+noise_sample = Noise(slc_noise; detrend_order=3)
+noise_param = fit_noise(noise_sample)
 
-plot(noise_fit)
+plot_autocov(noise_sample, noise_param)
 
 ## 
-plot_samples(noise_fit, 3)
+plot(noise_param; noise_samples=3)
+
+##
+seed!(42)
+plot(noise_sample, noise_param)

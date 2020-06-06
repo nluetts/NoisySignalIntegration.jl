@@ -4,12 +4,12 @@ to manipulate and plot a spectrum.
 """
 
 """
-    AbstractSpectrum{T<:Real}
+    AbstractSpectrum{T<:AbstractFloat}
 
 Abstract supertype for all spectral data. Subtypes need to implement fields `x` and `y`
 (xy-data of spectrum).
 """
-abstract type AbstractSpectrum{T<:Real} end
+abstract type AbstractSpectrum{T<:AbstractFloat} end
 
 Base.length(s::AbstractSpectrum) = length(s.x)
 Base.lastindex(s::AbstractSpectrum) = length(s)
@@ -38,12 +38,12 @@ Plots.plot!(p::Plots.Plot, s::AbstractSpectrum, args...; kw...) = plot!(p, s.x, 
 Plots.plot(s::AbstractSpectrum, args...; kw...) = plot!(plot(), s.x, s.y, args...; kw...)
 
 """
-    Spectrum(x::Array{T<:Real, 1}, y::Array{T<:Real, 1})
+    Spectrum(x::Array{T<:AbstractFloat, 1}, y::Array{T<:AbstractFloat, 1})
 """
 struct Spectrum{T} <: AbstractSpectrum{T}
-    x::Array{T, 1}
-    y::Array{T, 1}
-    function Spectrum(x::Array{T, 1}, y::Array{T, 1}) where {T<:Real}
+    x::Vector{T}
+    y::Vector{T}
+    function Spectrum(x::Vector{T}, y::Vector{T}) where {T<:AbstractFloat}
         length(x) == length(y) || throw(ArgumentError("x and y need to have the same length."))
         return new{T}(x, y)
     end
