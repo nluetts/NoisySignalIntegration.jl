@@ -1,17 +1,46 @@
 
 #######################################################
-### helper functions ##################################
+### Scaled and shifted distributions ##################
 #######################################################
 
 """
-   draw_from_beta(draws, μ, s)
+    ScaledShiftedCUD
 
-Return vector of random draws from a beta(2,2) distribution.
+Scaled and shifted ContinuousUnivariateDistribution.
 
-Return values are shifted by μ and scaled by s and fall in the interval
-[μ - ½s, μ + ½s].
+Note: Rescales and shifts random variable X to (X - offset) * scale + location
 """
-function draw_from_beta(draws, μ, s) :: Vector{Float64}
-    (rand(Beta(2.0, 2.0), draws) .- 0.5) .* s .+ μ
+struct ScaledShiftedCUD
+    distribution::ContinuousUnivariateDistribution
+    location::Float64
+    scale::Float64
+    offset::Float64
 end
 
+function sample(rng::AbstractRNG, d::ScaledShiftedCUD, dims::Integer)
+    samples = rand(rng, d.distribution, dims)
+    return (samples .- d.offset) .* d.scale .+ d.location
+end
+
+function sample(d::ScaledShiftedCUD, dims::Integer)
+    return sample(Random.GLOBAL_RNG, d, dims)
+end
+
+#######################################################
+### bounds datatype and sampling ######################
+#######################################################
+
+struct UncertainBounds{T<:ScaledShiftedCUD}
+    left::T
+    right::T
+end
+
+struct UncertainWidth{T<:ScaledShiftedCUD}
+    width::T
+end
+
+function sample(b::UncertainBounds, samples::Integer)
+    left = sample(b.left, samples)
+    right = sample(b.right, samples)
+    return hcat(left, right)
+end
