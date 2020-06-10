@@ -16,6 +16,7 @@ spec = Spectrum([1.0, 2.0], [3.0, 4.0])
 @assert length(spec) == 2
 @assert spec[end] == (2.0, 4.0)
 @assert [spec; spec] == Spectrum([1.0, 2.0, 1.0, 2.0], [3.0, 4.0, 3.0, 4.0])
+@assert spec + spec.y == Spectrum([1.0, 2.0], [6.0, 8.0])
 
 ##
 
@@ -52,3 +53,12 @@ plot(noise_param; noise_samples=3)
 ##
 seed!(42)
 plot(noise_sample, noise_param)
+
+##
+md1 = scale_shift_beta(2.0, 2.0, 3.0, 6.0)
+md2 = Normal(0.0, 0.1)
+ub = UncertainBounds(md1, md2)
+
+p = histogram(sample(ub, 100000))
+
+##

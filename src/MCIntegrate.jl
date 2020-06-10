@@ -1,6 +1,7 @@
 module MCIntegrate
 
-using Distributions: MvNormal, Beta, ContinuousUnivariateDistribution
+using Distributions: ContinuousUnivariateDistribution
+using Distributions: MvNormal, Beta, LocationScale
 using LinearAlgebra: eachcol
 using LsqFit: curve_fit
 using Plots
@@ -9,12 +10,16 @@ using Printf: @printf, @sprintf
 using Random
 using StatsBase: autocov
 
-#include("spectrum.jl")
-#include("noise.jl")
+include("spectrum.jl")
+include("noise.jl")
 include("bounds.jl")
-#export Spectrum, crop, plot
-#export Noise, GaussianNoiseModel, MvGaussianNoiseModel, fit_noise, get_cov, plot_autocov, sample, estimate_autocov
-export ScaledShiftedCUD, UncertainBounds, sample
+include("integration.jl")
+include("mc.jl")
+
+export Spectrum, crop, plot
+export Noise, GaussianNoiseModel, MvGaussianNoiseModel, get_cov, estimate_autocov, fit_noise, plot_autocov, sample
+export scale_shift_beta, LeftRightBound, WidthBound
+export mc_integrate
 
 # dev export
 #export allapproxequal, detrend

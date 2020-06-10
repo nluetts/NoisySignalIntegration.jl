@@ -9,18 +9,18 @@ end;
 
 
 """
-    function trapz(x, y, m, w))
+    function trapz(x, y, left, right))
 
-Integrate x in interval m ± w using trapezoidal integration after subtracting
-a baseline defined by data points at x = m ± w.
+Integrate vector `x` in interval [`left`, `right`] using trapezoidal integration
+after subtracting a baseline defined by data points at `x = left, right`.
 """
-function trapz(x, y, m, w)
+function trapz(x, y, left, right)
 
     δx = x[2]-x[1] # x increment (x must be evenly spaced!)
 
-    # find indices of interval m ± w
-    l = searchsortedlast(x, m-w)  # left index:  x[l] < m-w
-    r = searchsortedfirst(x, m+w) # right index: x[r] > m+w
+    # find indices of interval [left, right]
+    l = searchsortedlast(x, left)   # left index:  x[l] <= left
+    r = searchsortedfirst(x, right) # right index: x[r] >= right
 
     # boundary data points
     x_ll = x[l]
@@ -33,8 +33,8 @@ function trapz(x, y, m, w)
     y_rr = y[r]
 
     # linearly interpolated boundary data points
-    x_l = m - w
-    x_r = m + w
+    x_l = left
+    x_r = right
     y_l = begin
         a_l, m_l = get_linear_param(x_ll, δx, y_ll, y_lr)
         a_l + x_l*m_l

@@ -52,6 +52,7 @@ end
 # basic methods
 
 Base.:(==)(s0::Spectrum, s1::Spectrum) = s0.x == s1.x && s0.y == s1.y
+Base.:(+)(s::Spectrum{T}, y::Vector{T}) where {T}= Spectrum(s.x, s.y .+ y)
 Base.vcat(s0::Spectrum, s1::Spectrum) = Spectrum(vcat(s0.x, s1.x), vcat(s0.y, s1.y))
 
 """
