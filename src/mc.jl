@@ -7,17 +7,14 @@ function mc_integrate(
 ) where {T<:AbstractUncertainBound}
     integral_samples = Array{Float64}(undef, N, length(bs))
 
-    spectrum_samples = s.y .+ sample(nm, length(s), N)
+    noise_samples = sample(nm, length(s), N)
+    bound_samples = [typeof(b) <: WidthBound ? sample(b, s + noise_samples[:, i], N) : sample(b, N) for (i, b) in enumerate(bs)]
 
     for i in 1:N
-        spec = spectrum_samples[:, i]
-        for (j, bound) in enumerate(bs)
-            left, right = if typeof(bound) <: WidthBound
-                    sample(bound, Spectrum(s.x, spec))
-                else
-                    sample(bound)
-                end
-            integral_samples[i, j] = trapz(s.x, spec, left, right)
+        spec = s + noise_samples[:, i]
+        for j in 1:length(bs)
+            left, right = bound_samples[j][i]
+            integral_samples[i, j] = trapz(s.x, spec.y, left, right)
         end
     end
 
