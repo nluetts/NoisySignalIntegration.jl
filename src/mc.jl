@@ -10,19 +10,12 @@ function mc_integrate(
     spectrum_samples = s.y .+ sample(nm, length(s), N)
 
     for i in 1:N
-        #println(i)
         spec = spectrum_samples[:, i]
-        #println(spec)
         for (j, bound) in enumerate(bs)
             left, right = if typeof(bound) <: WidthBound
                     sample(bound, Spectrum(s.x, spec))
-#                    println(spl)
-#                    spl
                 else
-#                    println(typeof(bound))
                     sample(bound)
-#                    println(spl)
-#                    spl
                 end
             integral_samples[i, j] = trapz(s.x, spec, left, right)
         end
