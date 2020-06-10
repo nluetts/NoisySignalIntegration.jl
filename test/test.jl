@@ -55,10 +55,10 @@ seed!(42)
 plot(noise_sample, noise_param)
 
 ##
-md1 = scale_shift_beta(2.0, 2.0, 3.0, 6.0)
-md2 = Normal(0.0, 0.1)
-ub = UncertainBounds(md1, md2)
+b1 = WidthBound(15.0, scale_shift_beta(2.0, 2.0, 6.0, 7.0))
+b2 = LeftRightBound(scale_shift_beta(2.0, 2.0, 25.0, 28.0), scale_shift_beta(2.0, 2.0, 35.0, 38.0))
 
-p = histogram(sample(ub, 100000))
+p = histogram(sample(b2, 100000))
 
 ##
+integral_samples = mc_integrate(spec, noise_param, [b1, b2]; N=10_000)

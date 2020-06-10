@@ -37,7 +37,7 @@ struct WidthBound{T<:ContinuousUnivariateDistribution} <: AbstractUncertainBound
     width::T
 end
 
-function sample(b::LeftRightBound, samples::Integer)
+function sample(b::LeftRightBound, samples::Integer=1)
     left = rand(b.left, samples)
     right = rand(b.right, samples)
     return hcat(left, right)
@@ -61,9 +61,11 @@ function left_right_from_peak(x, y, p, w)
     return [x[m] - w/2, x[m] + w/2]
 end
 
-sample(w::WidthBound, samples::Integer=1) = rand(w.width, samples)
-function sample(w::WidthBound, s::Spectrum, samples::Integer=1) 
-    ws = rand(w.width, samples)
-    return [left_right_from_peak(s.x, s.y, w.loc, w) for w in ws]
+sample(wb::WidthBound, samples::Integer=1) = rand(wb.width, samples)
+function sample(wb::WidthBound, s::Spectrum, samples::Integer=1) 
+    ws = rand(wb.width, samples)
+    spls = [left_right_from_peak(s.x, s.y, wb.loc, w) for w in ws]
+    samples == 1 && return spls[1]
+    return spls
 end
     
