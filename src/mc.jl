@@ -1,5 +1,7 @@
+using Debugger
+
 function mc_integrate(
-    s::Spectrum,
+    с::Curve,
     nm::AbstractNoiseModel,
     bs::Vector{T}
     ;
@@ -7,14 +9,15 @@ function mc_integrate(
 ) where {T<:AbstractUncertainBound}
     integral_samples = Array{Float64}(undef, N, length(bs))
 
-    noise_samples = sample(nm, length(s), N)
-    bound_samples = [typeof(b) <: WidthBound ? sample(b, s + noise_samples[:, i], N) : sample(b, N) for (i, b) in enumerate(bs)]
+    noise_samples = sample(nm, length(с), N)
+    bound_samples = [typeof(b) <: WidthBound ? sample(b, с + noise_samples[:, i], N) : sample(b, N) for (i, b) in enumerate(bs)]
 
     for i in 1:N
-        spec = s + noise_samples[:, i]
+        spec = с + noise_samples[:, i]
         for j in 1:length(bs)
+            println(size(bound_samples[j]))
             left, right = bound_samples[j][i]
-            integral_samples[i, j] = trapz(s.x, spec.y, left, right)
+            integral_samples[i, j] = trapz(с.x, spec.y, left, right)
         end
     end
 

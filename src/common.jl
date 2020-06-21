@@ -1,4 +1,48 @@
 """
+Check if all elements in `x` are approximately equal.
+"""
+function allapproxequal(x)
+    length(x) < 2 && return true
+    e1 = x[1]
+    for i = 2:length(x)
+        x[i] ≈ e1 || return false
+    end
+    return true
+end
+
+"""
+    Do nothing of x and y have same length, otherwise throw error.
+"""
+function verify_same_length(x::AbstractArray, y::AbstractArray)
+    length(x) == length(y) || throw(ArgumentError("x and y need to have the same length."))
+    return nothing
+end
+
+"""
+    detrend(x, y, poly_order)
+
+Subtract polynomial baseline from y data.
+"""
+detrend(x, y, poly_order) = y - fit(x, y, poly_order).(x)
+
+"""
+    left_right_from_peak(x, y, p, w)
+
+Find peak in interval `p ± w/2` and return symmetric bounds
+left and right from peak with width `w`.
+"""
+function left_right_from_peak(x, y, p, w)
+    # find indices of interval [left, right]
+    left = p - w/2
+    right = p + w/2
+    l = searchsortedlast(x, left)    # left index:  x[l] <= p - w
+    r = searchsortedfirst(x, right)  # right index: x[r] >= p + w
+    
+    m = l + argmax(view(y, l:r)) - 1 # index of local maximum at x[m]
+    return [x[m] - w/2, x[m] + w/2]
+end
+
+"""
     function get_linear_param(x₀, Δx, y₀, y₁)
 """
 function get_linear_param(x₀, Δx, y₀, y₁)
@@ -6,7 +50,6 @@ function get_linear_param(x₀, Δx, y₀, y₁)
     a = y₀-x₀*m
     a, m # offset and slope
 end;
-
 
 """
     function trapz(x, y, left, right))

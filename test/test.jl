@@ -12,11 +12,17 @@ using Random
 
 ## Test spectrum
 
-spec = Spectrum([1.0, 2.0], [3.0, 4.0])
-@assert length(spec) == 2
-@assert spec[end] == (2.0, 4.0)
-@assert [spec; spec] == Spectrum([1.0, 2.0, 1.0, 2.0], [3.0, 4.0, 3.0, 4.0])
-@assert spec + spec.y == Spectrum([1.0, 2.0], [6.0, 8.0])
+curve = Curve([1.0, 2.0], [3.0, 4.0])
+@assert length(curve) == 2
+@assert curve[end] == (2.0, 4.0)
+@assert [curve; curve] == Curve([1.0, 2.0, 1.0, 2.0], [3.0, 4.0, 3.0, 4.0])
+@assert curve + curve.y == Curve([1.0, 2.0], [6.0, 8.0])
+
+curve = Noise([1.0, 2.0], [4.0, 4.0])
+@assert length(curve) == 2
+@assert curve[end][1] == 2.0
+@assert curve[end][2] + 1 ≈ 1
+@assert [curve; curve] == Noise([1.0, 2.0, 1.0, 2.0], [4.0, 4.0, 4.0, 4.0])
 
 ##
 
@@ -27,7 +33,7 @@ function get_test_spectrum(seed)
     @. y += 1.0 + x*1.5e-2 - (x-50)^3*3e-6
     n = length(x)
     δx = x[2] - x[1] 
-    return Spectrum(x, y .+ (get_cov(δx, n, 0.1, 0.5) |> MvNormal |> rand))
+    return Curve(x, y .+ (get_cov(δx, n, 0.1, 0.5) |> MvNormal |> rand))
 end
 
 spec = get_test_spectrum(1)
@@ -42,7 +48,7 @@ plot(slc_bands, alpha=0.5) |> (x -> plot!(x, slc_noise, alpha=0.5))
 
 ## fit noise and plot
 
-noise_sample = Noise(slc_noise; detrend_order=3)
+noise_sample = Noise(slc_noise, 3)
 noise_param = fit_noise(noise_sample)
 
 plot_autocov(noise_sample, noise_param)
@@ -51,7 +57,7 @@ plot_autocov(noise_sample, noise_param)
 plot(noise_param; noise_samples=3)
 
 ##
-seed!(42)
+Random.seed!(42)
 plot(noise_sample, noise_param)
 
 ##

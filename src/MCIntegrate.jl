@@ -10,18 +10,17 @@ using Printf: @printf, @sprintf
 using Random
 using StatsBase: autocov
 
-include("spectrum.jl")
-include("noise.jl")
-include("bounds.jl")
-include("integration.jl")
+include("common.jl")
+include("types.jl")
+include("stats.jl")
+include("utils.jl")
 include("mc.jl")
 
-export Spectrum, crop, plot
-export Noise, GaussianNoiseModel, MvGaussianNoiseModel, get_cov, estimate_autocov, fit_noise, plot_autocov, sample
-export scale_shift_beta, LeftRightBound, WidthBound
+export Curve, Noise, GaussianNoiseModel, MvGaussianNoiseModel, LeftRightBound, WidthBound, scale_shift_beta
+export get_cov, estimate_autocov, fit_noise, plot_autocov, sample, crop
 export mc_integrate
 
 # dev export
-#export allapproxequal, detrend
+# export allapproxequal, detrend
 
 end # module
