@@ -1,23 +1,23 @@
-using Debugger
-
 function mc_integrate(
-    с::Curve,
+    crv::Curve,
     nm::AbstractNoiseModel,
     bs::Vector{T}
     ;
     N::Int64=100_000
-) where {T<:AbstractUncertainBound}
+) where {T<:AbstractUncertainBound}   
+    # allocations
+    m  = length(crv)
+    nb = length(bs)
     integral_samples = Array{Float64}(undef, N, length(bs))
-
-    noise_samples = sample(nm, length(с), N)
-    bound_samples = [typeof(b) <: WidthBound ? sample(b, с + noise_samples[:, i], N) : sample(b, N) for (i, b) in enumerate(bs)]
+    noise_sample = Array{Float64}(undef, m)
+    bound_sample = Array{Float64}(undef, 1, 2)
 
     for i in 1:N
-        spec = с + noise_samples[:, i]
-        for j in 1:length(bs)
-            println(size(bound_samples[j]))
-            left, right = bound_samples[j][i]
-            integral_samples[i, j] = trapz(с.x, spec.y, left, right)
+        sample!(noise_sample, nm)
+        spec = crv + noise_sample
+        for (j, b) in enumerate(bs)
+            typeof(b) == WidthBound ? sample!(bound_sample, b, c) : sample!(bound_sample, b)
+            integral_samples[i, j] = trapz(crv.x, spec.y, bound_sample[1], bound_sample[2])
         end
     end
 

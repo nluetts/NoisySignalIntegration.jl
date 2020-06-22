@@ -67,4 +67,4 @@ b2 = LeftRightBound(scale_shift_beta(2.0, 2.0, 25.0, 28.0), scale_shift_beta(2.0
 p = histogram(sample(b2, 100000))
 
 ##
-integral_samples = mc_integrate(spec, noise_param, [b1, b2]; N=10_000)
+integral_samples = mc_integrate(spec, noise_param, [b1, b2]; N=10_000)  # left off here

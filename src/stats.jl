@@ -34,35 +34,60 @@ end
 ### Sampling ##########################################
 #######################################################
 
+# GaussianNoiseModel
+
+function sample!(s::AbstractArray{T}, nm::GaussianNoiseModel{T}) where {T}
+    randn!(s)
+    s *= nm.σ
+    return s
+end
+
 function sample(nm::GaussianNoiseModel{T}, m::Integer=100, n::Integer=1) where {T}
-    return nm.σ * randn(T, m, n)
+    s = Array{T}(undef, m, n)
+    return sample!(s, nm)
 end
 
+# MvGaussianNoiseModel
 
-function sample(
+function sample!(
+    s::AbstractArray{T},
     nm::MvGaussianNoiseModel{T},
-    m::Integer=100,
-    n::Integer=1
 ) where {T<:AbstractFloat}
-    samples = rand(MvNormal(get_cov(nm.δx, m, nm.α, nm.λ)), n)
-    n == 1 && return samples[:,1]
-    return samples
+    m = size(s)[1]
+    rand!(MvNormal(get_cov(nm.δx, m, nm.α, nm.λ)), s)
+    return s
 end
+sample(nm::MvGaussianNoiseModel{T}, m::Integer=100, n::Integer=1) where {T <: AbstractFloat}= sample!(Array{T}(undef, m, n), nm)
 
+# LeftRightBound
+
+function sample!(s::AbstractArray{T}, b::LeftRightBound) where {T <: AbstractFloat}
+    for i in eachindex(s[:, 1])
+        s[i, 1] = rand(b.left)
+        s[i, 2] = rand(b.right)
+    end
+    return s
+end
 
 function sample(b::LeftRightBound, samples::Integer=1)
-    left = rand(b.left, samples)
-    right = rand(b.right, samples)
-    return hcat(left, right)
+    s = Array{Float64}(undef, samples, 2)
+    return sample!(s, b)
 end
 
+# WidthBound
 
-sample(wb::WidthBound, samples::Integer=1) = rand(wb.width, samples)
-function sample(wb::WidthBound, s::Curve, samples::Integer=1) 
-    ws = rand(wb.width, samples)
-    spls = [left_right_from_peak(s.x, s.y, wb.loc, w) for w in ws]
-    samples == 1 && return spls[1]
+function sample!(spls::AbstractArray{T}, wb::WidthBound{T}, s::Curve{T}) where {T <: AbstractFloat}
+    rand!(wb.width, spls[:, 1])
+    n, _ = size(spls)
+    for i in 1:n
+        spls[i, :] = left_right_from_peak(s.x, s.y, wb.loc, spls[i, 1])
+    end
     return spls
+end
+
+function sample(wb::WidthBound{T}, s::Curve{T}, samples::Integer=1) where {T <: AbstractFloat}
+    spls = Array{T}(undef, samples, 2)
+    return sample!(spls, wb, s)
 end
 
 #######################################################
