@@ -76,7 +76,7 @@ end
 
 # WidthBound
 
-function sample!(spls::AbstractArray{T}, wb::WidthBound{T}, s::Curve{T}) where {T <: AbstractFloat}
+function sample!(spls::AbstractArray{T}, wb::WidthBound, s::Curve{T}) where {T <: AbstractFloat}
     rand!(wb.width, spls[:, 1])
     n, _ = size(spls)
     for i in 1:n

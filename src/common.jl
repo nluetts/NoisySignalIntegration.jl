@@ -35,7 +35,7 @@ function left_right_from_peak(x, y, p, w)
     # find indices of interval [left, right]
     left = p - w/2
     right = p + w/2
-    l = searchsortedlast(x, left)    # left index:  x[l] <= p - w
+    l = searchsortedfirst(x, left)   # left index:  x[l] <= p - w
     r = searchsortedfirst(x, right)  # right index: x[r] >= p + w
     
     m = l + argmax(view(y, l:r)) - 1 # index of local maximum at x[m]
@@ -62,7 +62,7 @@ function trapz(x, y, left, right)
     δx = x[2]-x[1] # x increment (x must be evenly spaced!)
 
     # find indices of interval [left, right]
-    l = searchsortedlast(x, left)   # left index:  x[l] <= left
+    l = searchsortedfirst(x, left)  # left index:  x[l] <= left
     r = searchsortedfirst(x, right) # right index: x[r] >= right
 
     # boundary data points
