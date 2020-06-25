@@ -12,7 +12,9 @@ end
 Plots.plot!(p::Plots.Plot, s::AbstractCurve, args...; kw...) = plot!(p, s.x, s.y, args...; kw...)
 Plots.plot(s::AbstractCurve, args...; kw...) = plot!(plot(), s.x, s.y, args...; kw...)
 
-# plot autocovariance
+#######################################################
+### plot autocovariance ###############################
+#######################################################
 
 function plot_autocov!(
     p::Plots.Plot,
@@ -55,7 +57,10 @@ function plot_autocov(n::Noise, nm::MvGaussianNoiseModel, args...; kw...)
     return plot_autocov!(plot(), n, nm, args...; kw...)
 end
 
-# plot noise samples
+#######################################################
+### plot noise samples ################################
+#######################################################
+
 
 function Plots.plot!(p::Plots.Plot, nm::AbstractNoiseModel; grid_points::Integer=1000, noise_samples::Integer=3)
     noise_samples < 0 && throw(ArgumentError("Number of samples must be > 0."))
@@ -95,5 +100,18 @@ function Plots.plot(
     kw...
 )
     return plot!(plot(), n, nm, args...; noise_samples=noise_samples, kw...)
+end
+
+#######################################################
+### plot bounds #######################################
+#######################################################
+
+function _plot_bound!(p::Plots.Plot, crv::Curve{T}, left::T, right::T) where {T}
+    bounds_parameters = get_integration_bounds(crv.x, crv.y, left, right)
+    l, r = bounds_parameters[2:3]
+    x_l, x_r, y_l, y_r = bounds_parameters[12:15]
+    x_ = [x_l; crv.x[l+1:r-1]; x_r; x_l]
+    y_ = [y_l; crv.y[l+1:r-1]; y_r; y_l]
+    return plot!(p, x_, y_; fill=(0, 0.5, :orange), linewidth=0)
 end
 
