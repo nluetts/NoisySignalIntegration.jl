@@ -1,7 +1,7 @@
 module MCIntegrate
 
 using Distributions: ContinuousUnivariateDistribution
-using Distributions: MvNormal, Beta, LocationScale
+using Distributions: MvNormal, Beta, LocationScale, mean
 using LinearAlgebra: eachcol
 using LsqFit: curve_fit
 using Plots

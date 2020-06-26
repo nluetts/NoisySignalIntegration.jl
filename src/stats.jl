@@ -57,7 +57,9 @@ function sample!(
     rand!(MvNormal(get_cov(nm.δx, m, nm.α, nm.λ)), s)
     return s
 end
-sample(nm::MvGaussianNoiseModel{T}, m::Integer=100, n::Integer=1) where {T <: AbstractFloat}= sample!(Array{T}(undef, m, n), nm)
+sample(nm::MvGaussianNoiseModel{T}, m::Integer, n::Integer) where {T <: AbstractFloat} = sample!(Array{T}(undef, m, n), nm)
+sample(nm::MvGaussianNoiseModel{T}, m::Integer) where {T <: AbstractFloat} = sample!(Array{T}(undef, m), nm)
+sample(nm::MvGaussianNoiseModel{T}) where {T <: AbstractFloat} = sample!(Array{T}(undef, 100), nm)
 
 # LeftRightBound
 

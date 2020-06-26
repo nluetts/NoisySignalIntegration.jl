@@ -37,34 +37,41 @@ function get_test_spectrum(seed)
 end
 
 spec = get_test_spectrum(1)
-# plot(spec)
+plot(spec)
 
 ## cut out parts for analysis
 
 slc_bands = crop(spec, 5.0, 40.0)
 slc_noise = crop(spec, 40.0, 100.0)
 
-# plot(slc_bands, alpha=0.5) |> (x -> plot!(x, slc_noise, alpha=0.5))
+plot(slc_bands, alpha=0.5) |> (x -> plot!(x, slc_noise, alpha=0.5))
 
 ## fit noise and plot
 
 noise_sample = Noise(slc_noise, 3)
 noise_param = fit_noise(noise_sample)
 
-# plot_autocov(noise_sample, noise_param)
+plot_autocov(noise_sample, noise_param)
 
 ## 
-# plot(noise_param; noise_samples=3)
+plot(noise_param; noise_samples=3)
 
 ##
 Random.seed!(42)
-# plot(noise_sample, noise_param)
+plot(noise_sample, noise_param)
 
 ##
 b1 = WidthBound(15.0, scale_shift_beta(2.0, 2.0, 3.0, 3.5))
-b2 = LeftRightBound(scale_shift_beta(2.0, 2.0, 25.0, 28.0), scale_shift_beta(2.0, 2.0, 35.0, 38.0))
+b2 = LeftRightBound(scale_shift_beta(2.0, 2.0, 25.0, 28.0), scale_shift_beta(2.0, 2.0, 31.0, 33.0))
 
-# p = histogram(sample(b2, 100000))
+p = histogram(sample(b2, 100000))
 
 ##
-integral_samples = mc_integrate(slc_bands, noise_param, [b1, b2]; N=100_000)  # left off here
+
+plot(slc_bands, [b1, b2], noise_param)
+
+##
+integral_samples = mc_integrate(slc_bands, noise_param, [b1, b2]; N=100_000)
+
+## 
+histogram(integral_samples)
