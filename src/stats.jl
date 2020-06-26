@@ -77,7 +77,7 @@ end
 # WidthBound
 
 function sample!(spls::AbstractArray{T}, wb::WidthBound, s::Curve{T}) where {T <: AbstractFloat}
-    rand!(wb.width, spls[:, 1])
+    rand!(wb.width, view(spls, :, 1))
     n, _ = size(spls)
     for i in 1:n
         spls[i, :] = left_right_from_peak(s.x, s.y, wb.loc, spls[i, 1])
@@ -85,7 +85,7 @@ function sample!(spls::AbstractArray{T}, wb::WidthBound, s::Curve{T}) where {T <
     return spls
 end
 
-function sample(wb::WidthBound{T}, s::Curve{T}, samples::Integer=1) where {T <: AbstractFloat}
+function sample(wb::WidthBound, s::Curve{T}, samples::Integer=1) where {T <: AbstractFloat}
     spls = Array{T}(undef, samples, 2)
     return sample!(spls, wb, s)
 end

@@ -61,10 +61,10 @@ Random.seed!(42)
 # plot(noise_sample, noise_param)
 
 ##
-b1 = WidthBound(15.0, scale_shift_beta(2.0, 2.0, 6.0, 7.0))
+b1 = WidthBound(15.0, scale_shift_beta(2.0, 2.0, 3.0, 3.5))
 b2 = LeftRightBound(scale_shift_beta(2.0, 2.0, 25.0, 28.0), scale_shift_beta(2.0, 2.0, 35.0, 38.0))
 
 # p = histogram(sample(b2, 100000))
 
 ##
-integral_samples = mc_integrate(slc_bands, noise_param, [b1, b2]; N=10_000)  # left off here
+integral_samples = mc_integrate(slc_bands, noise_param, [b1, b2]; N=100_000)  # left off here
