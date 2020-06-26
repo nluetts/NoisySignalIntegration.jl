@@ -43,3 +43,29 @@ end
     label := "experimental"
     ns.x, ns.y
 end
+
+# -----------------------------------
+# enable plotting of auto covariance
+# -----------------------------------
+struct AutoCovPlot end # just for dispatch
+
+@recipe function plot_repice(ns::Noise, nm::MvGaussianNoiseModel, ::Type{AutoCovPlot})
+    xguide := "lag"
+    yguide := "auto-covariance"
+
+    lags, acov = estimate_autocov(ns)
+
+    @series begin
+        label := "estimate"
+        seriescolor --> :blue
+        lags, acov
+    end
+
+    @series begin
+        label := @sprintf "fit (α = %.3e, λ = %.3e)" nm.α nm.λ
+        seriescolor --> :red
+        lags, gauss_kernel(lags, [nm.α, nm.λ])
+    end
+end
+
+plot_autocov(ns::Noise, nm::MvGaussianNoiseModel; kw...) = plot(ns, nm, AutoCovPlot; kw...)
