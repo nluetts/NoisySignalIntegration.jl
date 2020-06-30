@@ -18,11 +18,22 @@ include("utils.jl")
 include("plotting.jl")
 include("mc.jl")
 
-export Curve, Noise, GaussianNoiseModel, MvGaussianNoiseModel, LeftRightBound, WidthBound, scale_shift_beta
-export get_cov, estimate_autocov, fit_noise, plot_autocov, sample, sample!, crop
-export mc_integrate
-
-# dev export
-# export allapproxequal, detrend
+export
+    Curve,
+    Noise,
+    GaussianNoiseModel,
+    MvGaussianNoiseModel,
+    LeftRightBound,
+    WidthBound,
+    scale_shift_beta,
+    get_cov,
+    estimate_autocov,
+    fit_noise,
+    plot_autocov,
+    sample,
+    sample!,
+    crop,
+    clone,
+    mc_integrate
 
 end # module

@@ -7,7 +7,6 @@ function mc_integrate(
 ) where {T<:AbstractUncertainBound}   
 
     integral_samples = Array{Float64}(undef, N, length(bs))
-    bound_sample = Array{Float64}(undef, 1, 2)
 
     # sample noise and bounds
     print("\nPreparing noise samples ... ")
@@ -18,7 +17,7 @@ function mc_integrate(
         i % 100 == 0 && print("Integrating draw $i/$N \r")
         spec = crv + noise_samples[:, i]
         for (j, b) in enumerate(bs)
-            typeof(b) <: WidthBound ? sample!(bound_sample, b, crv) : sample!(bound_sample, b)
+            bound_sample = typeof(b) <: WidthBoundUnion ? sample(b, crv) : sample(b)
             integral_samples[i, j] = trapz(crv.x, spec.y, bound_sample[1], bound_sample[2])
         end
     end
@@ -43,7 +42,7 @@ function mc_integrate(
         i % 100 == 0 && print("Integrating draw $i/$N \r")
         spec = crv + noise_samples[:, i]
         for (j, b) in enumerate(bs)
-            typeof(b) <: WidthBound ? sample!(bound_sample, b, crv) : sample!(bound_sample, b)
+            bound_sample = typeof(b) <: WidthBoundUnion ? sample(b, crv) : sample(b)
             integral_samples[i, j] = trapz(crv.x, spec.y, bound_sample[1], bound_sample[2])
         end
     end

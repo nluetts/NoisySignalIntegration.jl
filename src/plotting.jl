@@ -76,7 +76,7 @@ plot_autocov(ns::Noise, nm::MvGaussianNoiseModel; kw...) = plot(ns, nm, AutoCovP
 # enable plotting of integration bounds
 # --------------------------------------
 
-@recipe function plot_recipe(crv::Curve{T}, left::T, right::T) where {T}
+@recipe function plot_recipe(crv::Curve, left::Float64, right::Float64)
     fillrange := 0
     fillalpha --> 0.5
     fillcolor --> :orange
@@ -94,7 +94,7 @@ end
 @recipe function plot_recipe(crv::Curve, bnds::Vector{T}) where {T <: AbstractUncertainBound}
     for b in bnds
         @series begin
-            l, r = typeof(b) <: WidthBound ? sample(b, crv) : sample(b)
+            l, r = typeof(b) <: WidthBoundUnion ? sample(b, crv) : sample(b)
             crv, l, r
         end
     end
@@ -119,6 +119,9 @@ end
         @series begin
             if typeof(b) <: WidthBound
                 l, r, = left_right_from_peak(crv.x, crv.y, b.loc, mean(b.width))
+            elseif typeof(b) == WidthBoundClone
+                :fillcolor --> :red
+                l, r, = left_right_from_peak(crv.x, crv.y, b.loc, mean(b.reference.width))
             else
                 l, r = map(mean, [b.left, b.right])
             end
@@ -137,11 +140,12 @@ end
         for b in bnds
             @series begin
                 label := nothing
-                l, r = typeof(b) <: WidthBound ? sample(b, crv_) : sample(b)
+                if typeof(b) == WidthBoundClone
+                    :fillcolor --> :red
+                end
+                l, r = typeof(b) <: WidthBoundUnion ? sample(b, crv_) : sample(b)
                 crv_, l, r
             end
         end
     end
 end
-
-

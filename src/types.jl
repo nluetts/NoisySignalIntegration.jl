@@ -1,14 +1,14 @@
-#######################################################
-### Curves ############################################
-#######################################################
+# -------------------------------------
+# Curves
+# -------------------------------------
 
 """
-    AbstractCurve{T<:AbstractFloat}
+    AbstractCurve
 
 Abstract supertype for all curves (xy-data).
 Subtypes need to implement fields `x` and `y`.
 """
-abstract type AbstractCurve{T<:AbstractFloat} end
+abstract type AbstractCurve end
 
 Base.length(s::AbstractCurve) = length(s.x)
 Base.lastindex(s::AbstractCurve) = length(s)
@@ -21,11 +21,10 @@ Base.minimum(s::AbstractCurve) = s[argmin(s.y)]
 Base.maximum(s::AbstractCurve) = s[argmax(s.y)]
 
 Base.:(==)(c0::AbstractCurve, c1::AbstractCurve) = c0.x == c1.x && c0.y == c1.y
-Base.:(+)(c::AbstractCurve{T}, y) where {T} = typeof(c)(c.x, c.y .+ convert.(T, y))
-# Base.:(+)(c::AbstractCurve{T}, y::Vector{T}) where {T} = typeof(c)(c.x, c.y .+ y)
+Base.:(+)(c::AbstractCurve, y) = typeof(c)(c.x, c.y .+ Float64.(y))
 Base.vcat(c0::AbstractCurve, c1::AbstractCurve) = typeof(c0)(vcat(c0.x, c1.x), vcat(c0.y, c1.y))
 
-function Base.show(io::IO, c::AbstractCurve{T}) where {T}
+function Base.show(io::IO, c::AbstractCurve)
     println("$(typeof(c)), $(length(c)) datapoints")
     if length(c) > 10
         ps = [c[1:5]; c[end-4:end]]
@@ -41,77 +40,77 @@ function Base.show(io::IO, c::AbstractCurve{T}) where {T}
 end
 
 """
-    Curve(x::Vector{T}, y::Vector{T}) where {T<:AbstractFloat}
-"""
-struct Curve{T} <: AbstractCurve{T}
-    x::Vector{T}
-    y::Vector{T}
-    function Curve{T}(x::Vector{T}, y::Vector{T}) where {T<:AbstractFloat}
-        verify_same_length(x, y)
-        return new{T}(x, y)
-    end
-end
+    Curve <: AbstractCurve
 
-Curve(x::Vector{T}, y::Vector{T}) where {T<:AbstractFloat} = Curve{T}(x, y)
-
-"""
-    Noise{T} <: AbstractCurve{T}
-
-Curve holding a noise sample. At minimum, a constant offset is removed
-from the noise sample upon construction.
+Datatype holding x-y data.
+x and y vectors have to have the same length.
 
 # Fields
-- `x::T` : spectral grid
-- `y::T` : spectral intensity
-- `n::Integer` (optional) : order of polynomial to subtract to detrend
-  (defaults to `0`, i.e. constant offset removal)
+- `x::Vector{Float64}` : spectral grid
+- `y::Vector{Float64}` : spectral intensity
 
 # Constructors
-    Noise(x::Vector{T}, y::Vector{T})  where {T<:AbstractFloat}
-    Noise(x::Vector{T}, y::Vector{T}, n::Integer)  where {T<:AbstractFloat}
-    Noise(s::Curve{T}) where {T<:AbstractFloat}
-    Noise(s::Curve{T}, n::Integer) where {T<:AbstractFloat}
 
+    Curve(x::Vector{Float64}, y::Vector{Float64})
 """
-struct Noise{T} <: AbstractCurve{T}
-    x::Vector{T}
-    y::Vector{T}
-    function Noise{T}(x::Vector{T}, y::Vector{T}) where {T<:AbstractFloat}
+struct Curve <: AbstractCurve
+    x::Vector{Float64}
+    y::Vector{Float64}
+    function Curve(x::Vector{Float64}, y::Vector{Float64})
         verify_same_length(x, y)
-        return new{T}(x, detrend(x, y, 0))
+        return new(x, y)
     end
 end
 
-Noise(x::Vector{T}, y::Vector{T}) where {T<:AbstractFloat} = Noise{T}(x, y)
+"""
+    Noise <: AbstractCurve
 
-function Noise(x::Vector{T}, y::Vector{T}, n::Integer) where {T<:AbstractFloat}
-    y = detrend(x, y, n)
-    return Noise{T}(x, y)
-end
+Curve holding a noise sample. At minimum, a constant offset
+is removed from the noise sample upon construction.
+If provided, a ploynomial of order `n` is subtracted.
 
-function Noise(s::Curve{T}, n::Integer=0) where {T<:AbstractFloat}
-    return Noise(s.x, s.y, n)
-end
+# Fields
+- `x::Vector{Float64}` : spectral grid
+- `y::Vector{Float64}` : spectral intensity
 
-#######################################################
-### Noise models ######################################
-#######################################################
+# Constructors
+    Noise(x::Vector{Float64}, y::Vector{Float64})
+    Noise(x::Vector{Float64}, y::Vector{Float64}, n::Integer)
+    Noise(s::Curve)
+    Noise(s::Curve, n::Integer)
 
 """
-    AbstractNoiseModel{T<:AbstractFloat}
+struct Noise <: AbstractCurve
+    x::Vector{Float64}
+    y::Vector{Float64}
+    function Noise(x, y)
+        verify_same_length(x, y)
+        return new(x, detrend(Float64.(x), Float64.(y), 0))
+    end
+end
+
+Noise(x, y, n::Integer) = Noise(x, detrend(x, y, n))
+Noise(s::Curve, n::Integer=0) = Noise(s.x, s.y, n)
+
+# -------------------------------------
+# Noise models
+# -------------------------------------
+
+"""
+    AbstractNoiseModel
 
 Supertype of noise models.
 Subtypes must support the following methods:
 
-- `sample(nm::NoiseModel{T}, m::Integer [, n::Integer])` :: Array{T, N}
+- `sample(nm::NoiseModel, m::Integer [, n::Integer])` :: Array{Float64, 2}
   with:
   `m` = no. of data points per noise sample
   `n` = no. of noise samples
 """
-abstract type AbstractNoiseModel{T<:AbstractFloat} end
+abstract type AbstractNoiseModel end
 
 """
-    GaussianNoiseModel{T<:AbstractFloat}
+    GaussianNoiseModel
 
 Model to describe noise following a univariate Gaussian distribution
 (uncorrelated noise).
@@ -119,37 +118,38 @@ Model to describe noise following a univariate Gaussian distribution
 # Fields
 - `σ::T` : standard deviation
 """
-struct GaussianNoiseModel{T} <: AbstractNoiseModel{T}
-    σ::T
+struct GaussianNoiseModel <: AbstractNoiseModel
+    σ::Float64
+    GaussianNoiseModel(σ) = new(Float64(σ))
 end
-function Base.show(io::IO, nm::GaussianNoiseModel{T}) where {T}
-    print("GaussianNoiseModel{$T}(σ = $(nm.σ))")
+function Base.show(io::IO, nm::GaussianNoiseModel)
+    println("GaussianNoiseModel(σ = $(nm.σ))")
 end
 
 """
-    MvGaussianNoiseModel{T<:AbstractFloat}
+    MvGaussianNoiseModel
 
 Model to describe noise following a multivariate Gaussian distribution
 (correlated noise).
 
 # Fields
-- `δx::T`: noise grid spacing
-- `α::T` : autocovariance amplitude
-- `λ::T` : autocovaraiance lag
+- `δx::Float64`: noise grid spacing
+- `α::Float64` : autocovariance amplitude
+- `λ::Float64` : autocovaraiance lag
 """
-struct MvGaussianNoiseModel{T} <: AbstractNoiseModel{T}
-    δx::T
-    α::T
-    λ::T
+struct MvGaussianNoiseModel <: AbstractNoiseModel
+    δx::Float64
+    α::Float64
+    λ::Float64
 end
 
-function Base.show(io::IO, nm::MvGaussianNoiseModel{T}) where {T}
-    print("MvGaussianNoiseModel{$T}(α = $(nm.α), λ = $(nm.λ))")
+function Base.show(io::IO, nm::MvGaussianNoiseModel)
+    println("MvGaussianNoiseModel(α = $(nm.α), λ = $(nm.λ))")
 end
 
-#######################################################
-### Bounds  ###########################################
-#######################################################
+# -------------------------------------
+# Bounds
+# -------------------------------------
 
 """
     ScaledShiftedBeta
@@ -173,6 +173,7 @@ end
     AbstractUncertainBound
 
 Supertype of uncertain bounds.
+Subtypes must implement methods to sample integration bounds.
 """
 abstract type AbstractUncertainBound end
 
@@ -182,7 +183,23 @@ struct LeftRightBound{S1<:ContinuousUnivariateDistribution,
     right::S2
 end
 
+# sample cache that is retrieved by `WidthBoundClone`s
+const WIDTH_SAMPLES = Dict{Int, Array{Float64}}()
+
 struct WidthBound{T<:ContinuousUnivariateDistribution} <: AbstractUncertainBound
-    loc::AbstractFloat
+    loc::Float64
     width::T
+    id::Int
+    function WidthBound(loc::Float64, width::T) where {T<:ContinuousUnivariateDistribution}
+        id = isempty(WIDTH_SAMPLES) ? 1 : maximum(keys(WIDTH_SAMPLES)) + 1
+        WIDTH_SAMPLES[id] = []
+        return new{T}(loc, width, id)
+    end
 end
+
+struct WidthBoundClone <: AbstractUncertainBound
+    loc::Float64
+    reference::WidthBound
+end
+
+WidthBoundUnion = Union{WidthBound, WidthBoundClone}

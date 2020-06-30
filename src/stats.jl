@@ -12,14 +12,14 @@ function gauss_kernel(Δx, β)
 end
 
 """
-    get_cov(δx::T, n::Integer, α::T, λ::T) where {T<:AbstractFloat}
+    get_cov(δx::Float64, n::Integer, α::Float64, λ::Float64)
 
 Return covariance matrix `Σ` with size `n` × `n` for the exponentiated quadratic kernel
 with amplitude `α` and lag `λ` calculated on a grid of spacing `δx`.
 """
-function get_cov(δx::T, n::Integer, α::T, λ::T) where {T<:AbstractFloat}
+function get_cov(δx::Float64, n::Integer, α::Float64, λ::Float64)
     β = [α, λ]
-    Σ = Array{T}(undef, n, n)
+    Σ = Array{Float64}(undef, n, n)
     for i = (1:n), j = (1:n)
         Δx = δx * (i - j)
         Σ[i,j] = gauss_kernel(Δx, β)
@@ -30,40 +30,40 @@ function get_cov(δx::T, n::Integer, α::T, λ::T) where {T<:AbstractFloat}
     return Σ
 end
 
-#######################################################
-### Sampling ##########################################
-#######################################################
+# -------------------------------------
+# Sampling 
+# -------------------------------------
 
 # GaussianNoiseModel
 
-function sample!(s::AbstractArray{T}, nm::GaussianNoiseModel{T}) where {T}
+function sample!(s::AbstractArray{Float64}, nm::GaussianNoiseModel)
     randn!(s)
     s *= nm.σ
     return s
 end
 
-function sample(nm::GaussianNoiseModel{T}, m::Integer=100, n::Integer=1) where {T}
-    s = Array{T}(undef, m, n)
+function sample(nm::GaussianNoiseModel, m::Integer=100, n::Integer=1)
+    s = Array{Float64}(undef, m, n)
     return sample!(s, nm)
 end
 
 # MvGaussianNoiseModel
 
 function sample!(
-    s::AbstractArray{T},
-    nm::MvGaussianNoiseModel{T},
-) where {T<:AbstractFloat}
+    s::AbstractArray{Float64},
+    nm::MvGaussianNoiseModel,
+)
     m = size(s)[1]
     rand!(MvNormal(get_cov(nm.δx, m, nm.α, nm.λ)), s)
     return s
 end
-sample(nm::MvGaussianNoiseModel{T}, m::Integer, n::Integer) where {T <: AbstractFloat} = sample!(Array{T}(undef, m, n), nm)
-sample(nm::MvGaussianNoiseModel{T}, m::Integer) where {T <: AbstractFloat} = sample!(Array{T}(undef, m), nm)
-sample(nm::MvGaussianNoiseModel{T}) where {T <: AbstractFloat} = sample!(Array{T}(undef, 100), nm)
+sample(nm::MvGaussianNoiseModel, m::Integer, n::Integer) = sample!(Array{Float64}(undef, m, n), nm)
+sample(nm::MvGaussianNoiseModel, m::Integer) = sample!(Array{Float64}(undef, m), nm)
+sample(nm::MvGaussianNoiseModel) = sample!(Array{Float64}(undef, 100), nm)
 
 # LeftRightBound
 
-function sample!(s::AbstractArray{T}, b::LeftRightBound) where {T <: AbstractFloat}
+function sample!(s::AbstractArray{Float64}, b::LeftRightBound)
     for i in eachindex(s[:, 1])
         s[i, 1] = rand(b.left)
         s[i, 2] = rand(b.right)
@@ -78,8 +78,9 @@ end
 
 # WidthBound
 
-function sample!(spls::AbstractArray{T}, wb::WidthBound, s::Curve{T}) where {T <: AbstractFloat}
+function sample!(spls::AbstractArray{Float64}, wb::WidthBound, s::Curve)
     rand!(wb.width, view(spls, :, 1))
+    WIDTH_SAMPLES[wb.id] = spls[:, 1]
     n, _ = size(spls)
     for i in 1:n
         spls[i, :] = left_right_from_peak(s.x, s.y, wb.loc, spls[i, 1])
@@ -87,16 +88,24 @@ function sample!(spls::AbstractArray{T}, wb::WidthBound, s::Curve{T}) where {T <
     return spls
 end
 
-function sample(wb::WidthBound, s::Curve{T}, samples::Integer=1) where {T <: AbstractFloat}
-    spls = Array{T}(undef, samples, 2)
+function sample(wb::WidthBound, s::Curve, samples::Integer=1)
+    spls = Array{Float64}(undef, samples, 2)
     return sample!(spls, wb, s)
 end
 
-#######################################################
-### Fitting ###########################################
-#######################################################
+function sample(wbc::WidthBoundClone, s::Curve)
+    spls = Array{Float64}(undef, length(WIDTH_SAMPLES[wbc.reference.id]), 2)
+    for (i, w) in enumerate(WIDTH_SAMPLES[wbc.reference.id])
+        spls[i, :] = left_right_from_peak(s.x, s.y, wbc.loc, w)
+    end
+    return spls
+end
 
-function estimate_autocov(n::Noise{T}) where {T<:AbstractFloat}
+# -------------------------------------
+# Fitting 
+# -------------------------------------
+
+function estimate_autocov(n::Noise)
     # check that spectral grid is equally spaced
     if !allapproxequal(diff(n.x))
         throw(ArgumentError("Noise analysis only works on an evenly spaced spectral grid."))
@@ -112,8 +121,12 @@ function estimate_autocov(n::Noise{T}) where {T<:AbstractFloat}
 end
 
 """
-    fit_noise(lags::T, autocov::T; α_guess=1.0, λ_guess=1.0) where {T<:AbstractFloat}
-    fit_noise(n::Noise{T}; α_guess=1.0, λ_guess=1.0) where {T}
+    function fit_noise(
+        lags::Vector{Float64},
+        autocov::Vector{Float64};
+        α_guess=1.0,
+        λ_guess=1.0
+    )
 
 Estimates parameters α and λ of the exponentiated quadratic covariance function
 k(Δx) = α² exp(-0.5 (Δx/λ)²) fitted to autocovariance (k) vs. lag (Δx).
@@ -123,16 +136,16 @@ estimated and passed to the fitting function.
 Note: Change initial guess if fit does not converge to sensible result.
 """
 function fit_noise(
-    lags::Vector{T},
-    autocov::Vector{T};
+    lags::Vector{Float64},
+    autocov::Vector{Float64};
     α_guess=1.0,
     λ_guess=1.0
-) where {T<:AbstractFloat}
+)
     fit = curve_fit(gauss_kernel, lags, autocov, [α_guess, λ_guess])
-    return MvGaussianNoiseModel{T}(lags[1], fit.param...)
+    return MvGaussianNoiseModel(lags[1], fit.param...)
 end
 
-function fit_noise(n::Noise{T}; α_guess=1.0, λ_guess=1.0) where {T}
+function fit_noise(n::Noise; α_guess=1.0, λ_guess=1.0)
     lags, acov = estimate_autocov(n)
     fit_noise(lags, acov; α_guess=α_guess, λ_guess=λ_guess)
 end

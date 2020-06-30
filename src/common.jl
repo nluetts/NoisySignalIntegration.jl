@@ -11,7 +11,7 @@ function allapproxequal(x)
 end
 
 """
-    Do nothing of x and y have same length, otherwise throw error.
+    Do nothing if x and y have same length, otherwise throw ArgumentError.
 """
 function verify_same_length(x::AbstractArray, y::AbstractArray)
     length(x) == length(y) || throw(ArgumentError("x and y need to have the same length."))
@@ -21,7 +21,7 @@ end
 """
     detrend(x, y, poly_order)
 
-Subtract polynomial baseline from y data.
+Subtract polynomial from y data.
 """
 detrend(x, y, poly_order) = y - fit(x, y, poly_order).(x)
 
@@ -42,9 +42,6 @@ function left_right_from_peak(x, y, p, w)
     return [x[m] - w/2, x[m] + w/2]
 end
 
-"""
-    function get_linear_param(x₀, Δx, y₀, y₁)
-"""
 function get_linear_param(x₀, Δx, y₀, y₁)
     m = (y₁-y₀)/Δx
     a = y₀-x₀*m
