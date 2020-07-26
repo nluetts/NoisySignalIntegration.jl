@@ -1,7 +1,22 @@
+WidthBoundUnion = Union{WidthBound, WidthBoundClone}
+
+function _mc_integrate!(integral_samples, curve::Curve, noise_samples, bounds, N)
+    for i in 1:N
+        i % 100 == 0 && print("Integrating draw $i/$N \r")
+        curve_ = curve + noise_samples[:, i]
+        for (j, b) in enumerate(bounds)
+            bound_sample = typeof(b) <: WidthBoundUnion ? sample(b, curve) : sample(b)
+            integral_samples[i, j] = trapz(curve.x, curve_.y, bound_sample[1], bound_sample[2])
+        end
+    end
+    println()
+end
+
+
 function mc_integrate(
     crv::Curve,
-    nm::AbstractNoiseModel,
-    bs::Vector{T}
+    bs::Vector{T},
+    nm::AbstractNoiseModel
     ;
     N::Int64=100_000
 ) where {T<:AbstractUncertainBound}   
@@ -13,15 +28,7 @@ function mc_integrate(
     noise_samples = sample(nm, length(crv), N)
     print("done.\n")
     
-    for i in 1:N
-        i % 100 == 0 && print("Integrating draw $i/$N \r")
-        spec = crv + noise_samples[:, i]
-        for (j, b) in enumerate(bs)
-            bound_sample = typeof(b) <: WidthBoundUnion ? sample(b, crv) : sample(b)
-            integral_samples[i, j] = trapz(crv.x, spec.y, bound_sample[1], bound_sample[2])
-        end
-    end
-    println()
+    _mc_integrate!(integral_samples, crv, noise_samples, bs, N)
 
     return integral_samples
 end # mc_integrate
@@ -36,17 +43,8 @@ function mc_integrate(
 ) where {T<:AbstractUncertainBound}   
 
     integral_samples = Array{Float64}(undef, N, length(bs))
-    bound_sample = Array{Float64}(undef, 1, 2)
     
-    for i in 1:N
-        i % 100 == 0 && print("Integrating draw $i/$N \r")
-        spec = crv + noise_samples[:, i]
-        for (j, b) in enumerate(bs)
-            bound_sample = typeof(b) <: WidthBoundUnion ? sample(b, crv) : sample(b)
-            integral_samples[i, j] = trapz(crv.x, spec.y, bound_sample[1], bound_sample[2])
-        end
-    end
-    println()
+    _mc_integrate!(integral_samples, crv, noise_samples, bs, N)
 
     return integral_samples
 end # mc_integrate

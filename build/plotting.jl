@@ -131,7 +131,7 @@ end
 
     # plot samples
     for i in 1:samples
-        label --> "sample"
+        label --> "sample $i"
         crv_ = crv + (sample(nm, length(crv)) .+ span * i)
         @series begin
             crv_

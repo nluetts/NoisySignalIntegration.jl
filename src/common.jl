@@ -36,7 +36,7 @@ function left_right_from_peak(x, y, p, w)
     left = p - w/2
     right = p + w/2
     l = searchsortedfirst(x, left)   # left index:  x[l] <= p - w
-    r = searchsortedfirst(x, right)  # right index: x[r] >= p + w
+    r = searchsortedlast(x, right)  # right index: x[r] >= p + w
     
     m = l + argmax(view(y, l:r)) - 1 # index of local maximum at x[m]
     return [x[m] - w/2, x[m] + w/2]
@@ -45,9 +45,13 @@ end
 function get_linear_param(x₀, Δx, y₀, y₁)
     m = (y₁-y₀)/Δx
     a = y₀-x₀*m
-    a, m # offset and slope
+    return a, m # offset and slope
 end
 
+
+# this horrible function only exists because the bounds are needed
+# for plotting and wrapping them in their own object caused a big
+# decrease in performance 
 @inline function get_integration_bounds(x, y, left, right)
     δx = x[2]-x[1] # x increment (x must be evenly spaced!)
 
@@ -77,6 +81,7 @@ end
         a_r + x_r*m_r
     end
 
+    # yes, one should not return a 15-tuple
     return δx, l, r, x_ll, x_lr, x_rl, x_rr, y_ll, y_lr, y_rl, y_rr, x_l, x_r, y_l, y_r
 end
 
@@ -86,20 +91,78 @@ end
 Integrate vector `x` in interval [`left`, `right`] using trapezoidal integration
 after subtracting a baseline defined by data points at `x = left, right`.
 """
-function trapz(x, y, left, right)
+@inline singletrapz(x₀, x₁, y₀, y₁) = 0.5 * abs(x₁ - x₀) * (y₁ + y₀)
+@inline function lininterp(x, x₀, x₁, y₀, y₁)
+    δx = x₁ - x₀
+    y = (y₁*(x - x₀) + y₀*(x₁ - x)) / δx
+    return y
+end
 
-    δx, l, r, x_ll, x_lr, x_rl, x_rr, y_ll, y_lr, y_rl, y_rr, x_l, x_r, y_l, y_r = get_integration_bounds(x, y, left, right)
+function trapz(x::AbstractArray{T}, y::AbstractArray{T}, left::T, right::T) where {T<:AbstractFloat}
 
-    # integral correction for interpolated bounds
-    A = 0.5 * ((x_lr - x_l)*(y_lr + y_l)
-             + (x_r - x_rl)*(y_rl + y_r));
+    A = zero(eltype(y)) # Area to be returned
+    
+    N = length(x)
+    N != length(y) && throw(ArgumentError("Data arrays `x` and `y` must have the same length."))
+    N < 2 && return A
+    
+    yl = yr = nothing # the y-values of the left and right integration bound, to be interpolated
+    lastiter = false
+    j = 2
 
-    # trapezoidal integration
-    y₀ = y_lr
-    for j = (l+2):(r-1)
+    while j <= N
+
+        x₀ = x[j-1]
+        x₁ = x[j]
+        y₀ = y[j-1]
         y₁ = y[j]
-        A += 0.5*δx*(y₀ + y₁)
-        y₀ = y₁
+        
+        if x₁ <= left
+            j += 1
+            continue
+        elseif yl === nothing
+            # this will only run once, when we enter the integration window
+            # test whether x₀ should be replaced by `left`
+            if x₀ < left
+                y₀ = lininterp(left, x₀, x₁, y₀, y₁)
+                x₀ = left
+            else
+                # this case means that `left` <= x[1]
+                left = x₀
+            end
+            yl = y₀
+        end
+        
+        # test whether x₁ should be replaced by `right`
+        if x₁ >= right
+            # we move out of the integration window
+            yr = x₁ == right ? y₁ : lininterp(right, x₀, x₁, y₀, y₁)
+            x₁ = right
+            y₁ = yr
+            lastiter = true # we shall break the loop after this iteration
+        end
+        
+        A += singletrapz(x₀, x₁, y₀, y₁)
+        
+        lastiter && break
+        
+        j += 1
     end
-    A - 0.5*(x_r-x_l)*(y_l+y_r)
-end;
+
+    # subtract baseline
+    if yr === nothing
+        # this case means that right > x[end]
+        right = x[N]
+        yr = y[N]
+    end
+
+    A_baseline = singletrapz(left, right, yl, yr)
+
+    return A - A_baseline
+end
+
+function trapz(x::AbstractArray{T}, y::AbstractArray{T}, left, right) where {T<:AbstractFloat}
+    left = T(left)
+    right = T(right)
+    return trapz(x, y, left, right)
+end

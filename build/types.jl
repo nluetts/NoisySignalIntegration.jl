@@ -160,7 +160,7 @@ Samples fall in the interval [`a`, `b`].
 ScaledShiftedBeta = LocationScale{Float64, Beta{Float64}}
 
 """
-    scale_shift_beta(α, β, a, b)
+    scale_shift_beta(α::Float64, β::Float64, a::Float64, b::Float64)
 
 Create a scaled and shifted `Beta(α, β)` distribution.
 Samples fall in the interval [`a`, `b`].
@@ -190,10 +190,10 @@ struct WidthBound{T<:ContinuousUnivariateDistribution} <: AbstractUncertainBound
     loc::Float64
     width::T
     id::Int
-    function WidthBound(loc, width::T) where {T<:ContinuousUnivariateDistribution}
+    function WidthBound(loc::Float64, width::T) where {T<:ContinuousUnivariateDistribution}
         id = isempty(WIDTH_SAMPLES) ? 1 : maximum(keys(WIDTH_SAMPLES)) + 1
         WIDTH_SAMPLES[id] = []
-        return new{T}(Float64(loc), width, id)
+        return new{T}(loc, width, id)
     end
 end
 
@@ -201,3 +201,5 @@ struct WidthBoundClone <: AbstractUncertainBound
     loc::Float64
     reference::WidthBound
 end
+
+WidthBoundUnion = Union{WidthBound, WidthBoundClone}
