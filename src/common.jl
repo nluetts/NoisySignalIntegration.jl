@@ -98,7 +98,7 @@ after subtracting a baseline defined by data points at `x = left, right`.
     return y
 end
 
-function trapz(x::AbstractArray{T}, y::AbstractArray{T}, left::T, right::T) where {T<:AbstractFloat}
+function trapz(x::AbstractArray{T}, y::AbstractArray{T}, left::T, right::T; subtract_baseline=true) where {T<:AbstractFloat}
 
     A = zero(eltype(y)) # Area to be returned
     
@@ -149,20 +149,20 @@ function trapz(x::AbstractArray{T}, y::AbstractArray{T}, left::T, right::T) wher
         j += 1
     end
 
-    # subtract baseline
-    if yr === nothing
-        # this case means that right > x[end]
-        right = x[N]
-        yr = y[N]
+    if subtract_baseline
+        if yr === nothing
+            # this case means that right > x[end]
+            right = x[N]
+            yr = y[N]
+        end
+        return A - singletrapz(left, right, yl, yr)
+    else
+        return A
     end
-
-    A_baseline = singletrapz(left, right, yl, yr)
-
-    return A - A_baseline
 end
 
-function trapz(x::AbstractArray{T}, y::AbstractArray{T}, left, right) where {T<:AbstractFloat}
+function trapz(x::AbstractArray{T}, y::AbstractArray{T}, left, right; subtract_baseline=true) where {T<:AbstractFloat}
     left = T(left)
     right = T(right)
-    return trapz(x, y, left, right)
+    return trapz(x, y, left, right, subtract_baseline=subtract_baseline)
 end

@@ -73,19 +73,24 @@ end
     # Test integration function trapz using analytic integrals;
     # integral functions (F) of functions f from
     # https://en.wikipedia.org/wiki/Lists_of_integrals
+
+    bounds = [(-1, 4), (1, 4), (-1.4, 7.9), (11.6, 17.4)]
+
     test_data = [
-        (f = x->  exp(3x), F = x->        1/3*exp(3x), l =    -1, r =    3),
-        (f = x->  1.2^(x), F = x->   1.2^(x)/log(1.2), l =     1, r =    3),
-        (f = x->   sin(x), F = x->            -cos(x), l =  -2.5, r =  7.9),
-        (f = x-> 1/(2x+3), F = x-> 1/2*log(abs(2x+3)), l = -11.6, r = -2.4)
+        (f = x->  exp(3x), F = x->        1/3*exp(3x)),
+        (f = x->  1.2^(x), F = x->   1.2^(x)/log(1.2)),
+        (f = x->   sin(x), F = x->            -cos(x)),
+        (f = x-> 1/(2x+3), F = x-> 1/2*log(abs(2x+3)))
     ]
     x = collect(-20:0.0001:20)
     for t in test_data
-        f, F, l, r = t
-        trapz_result = mci.trapz(x, f.(x), l, r)
-        # 1/2*(f(r) + f(l))*(r - l) term: subtracting baseline
-        reference = F(r) - F(l) - 1/2*(f(r) + f(l))*(r - l)
-        @test trapz_result ≈ reference rtol=1e-7
+        for (l, r) in bounds
+            f, F = t
+            ref_1 = F(r) - F(l)
+            ref_2 = ref_1 - 1/2*(f(r) + f(l))*(r - l) # 1/2*(f(r) + f(l))*(r - l) term: subtracting baseline
+            @test mci.trapz(x, f.(x), l, r, subtract_baseline=false) ≈ ref_1 rtol=1e-7
+            @test mci.trapz(x, f.(x), l, r) ≈ ref_2 rtol=1e-7
+        end
     end
 
     begin

@@ -15,8 +15,8 @@ end
 
 function mc_integrate(
     crv::Curve,
-    bs::Vector{T},
-    nm::AbstractNoiseModel
+    nm::AbstractNoiseModel,
+    bs::Vector{T}
     ;
     N::Int64=100_000
 ) where {T<:AbstractUncertainBound}   
