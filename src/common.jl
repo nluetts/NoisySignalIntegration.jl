@@ -42,49 +42,6 @@ function left_right_from_peak(x, y, p, w)
     return [x[m] - w/2, x[m] + w/2]
 end
 
-function get_linear_param(x₀, Δx, y₀, y₁)
-    m = (y₁-y₀)/Δx
-    a = y₀-x₀*m
-    return a, m # offset and slope
-end
-
-
-# this horrible function only exists because the bounds are needed
-# for plotting and wrapping them in their own object caused a big
-# decrease in performance 
-@inline function get_integration_bounds(x, y, left, right)
-    δx = x[2]-x[1] # x increment (x must be evenly spaced!)
-
-    # find indices of interval [left, right]
-    l = searchsortedlast(x, left)  # left index:  x[l] <= left
-    r = searchsortedfirst(x, right) # right index: x[r] >= right
-
-    # boundary data points
-    x_ll = x[l]
-    x_lr = x[l+1]
-    x_rl = x[r-1]
-    x_rr = x[r]
-    y_ll = y[l]
-    y_lr = y[l+1]
-    y_rl = y[r-1]
-    y_rr = y[r]
-
-    # linearly interpolated boundary data points
-    x_l = left
-    x_r = right
-    y_l = begin
-        a_l, m_l = get_linear_param(x_ll, δx, y_ll, y_lr)
-        a_l + x_l*m_l
-    end
-    y_r = begin
-        a_r, m_r = get_linear_param(x_rl, δx, y_rl, y_rr)
-        a_r + x_r*m_r
-    end
-
-    # yes, one should not return a 15-tuple
-    return δx, l, r, x_ll, x_lr, x_rl, x_rr, y_ll, y_lr, y_rl, y_rr, x_l, x_r, y_l, y_r
-end
-
 """
     function trapz(x, y, left, right))
 
@@ -98,7 +55,10 @@ after subtracting a baseline defined by data points at `x = left, right`.
     return y
 end
 
+
 function trapz(x::AbstractArray{T}, y::AbstractArray{T}, left::T, right::T; subtract_baseline=true) where {T<:AbstractFloat}
+
+    left, right = left < right ? (left, right) : (right, left)
 
     A = zero(eltype(y)) # Area to be returned
     

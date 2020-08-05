@@ -18,6 +18,7 @@ end
 # --------------------------------------
 
 @recipe function plot_recipe(nm::AbstractNoiseModel; grid_points=1000, noise_samples=3)
+    legend --> :outertopright
     noise_samples < 0 && throw(ArgumentError("Number of samples must be > 0."))
     S = sample(nm, grid_points, noise_samples)
     delete!(plotattributes, :grid_points)
@@ -76,6 +77,61 @@ plot_autocov(ns::Noise, nm::MvGaussianNoiseModel; kw...) = plot(ns, nm, AutoCovP
 # enable plotting of integration bounds
 # --------------------------------------
 
+function get_left_right_points(x::AbstractArray{T}, y::AbstractArray{T}, left::T, right::T; subtract_baseline=true) where {T<:AbstractFloat}
+    
+    left, right = left < right ? (left, right) : (right, left)
+
+    N = length(x)
+    N != length(y) && throw(ArgumentError("Data arrays `x` and `y` must have the same length."))
+    N < 2 && throw(ArgumentError("`x`and `y` must each hold at least two elements."))
+    
+    l =  r = xl = xr = yl = yr = nothing
+    j = 2
+
+    while j <= N
+
+        x₀ = x[j-1]
+        x₁ = x[j]
+        y₀ = y[j-1]
+        y₁ = y[j]
+        
+        if x₁ <= left
+            j += 1
+            continue
+        elseif yl === nothing
+            # this will only run once, when we enter the integration window
+            if x₀ < left
+                xl = left
+                yl = lininterp(left, x₀, x₁, y₀, y₁)
+                l = j - 1
+            else
+                # this case means that `left` <= x[1]
+                xl = x₀
+                yl = y₀
+                l = 0
+            end
+        end
+        
+        if x₁ >= right
+            # we move out of the integration window
+            yr = x₁ == right ? y₁ : lininterp(right, x₀, x₁, y₀, y₁)
+            xr = right
+            r = j + 1
+            break
+        end
+        j += 1
+    end
+
+    if yr === nothing
+        # this case means that right > x[end]
+        xr = x[N]
+        yr = y[N]
+        r = N + 1
+    end
+    return l, r, xl, xr, yl, yr
+end
+
+
 @recipe function plot_recipe(crv::Curve, left::Float64, right::Float64)
     fillrange := 0
     fillalpha --> 0.5
@@ -83,11 +139,9 @@ plot_autocov(ns::Noise, nm::MvGaussianNoiseModel; kw...) = plot(ns, nm, AutoCovP
     linewidth --> 0
     label     --> nothing
 
-    bounds_parameters = get_integration_bounds(crv.x, crv.y, left, right)
-    l, r = bounds_parameters[2:3]
-    x_l, x_r, y_l, y_r = bounds_parameters[12:15]
-    x = [x_l; crv.x[l+1:r-1]; x_r; x_l]
-    y = [y_l; crv.y[l+1:r-1]; y_r; y_l]
+    l, r, xl, xr, yl, yr = get_left_right_points(crv.x, crv.y, left, right)
+    x = [xl; crv.x[l+1:r-1]; xr; xl]
+    y = [yl; crv.y[l+1:r-1]; yr; yl]
     return x, y
 end
 
@@ -131,9 +185,9 @@ end
 
     # plot samples
     for i in 1:samples
-        label --> "sample"
         crv_ = crv + (sample(nm, length(crv)) .+ span * i)
         @series begin
+            label := "sample $i"
             crv_
         end
     

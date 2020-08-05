@@ -13,7 +13,7 @@ abstract type AbstractCurve end
 Base.length(s::AbstractCurve) = length(s.x)
 Base.lastindex(s::AbstractCurve) = length(s)
 Base.getindex(s::AbstractCurve, i::Integer) = (s.x[i], s.y[i])
-Base.getindex(s::AbstractCurve, r::UnitRange) =Curve(s.x[r], s.y[r])
+Base.getindex(s::AbstractCurve, r::UnitRange) = Curve(s.x[r], s.y[r])
 Base.iterate(s::AbstractCurve, i::Int64) = i > length(s) ? nothing : (s[i], i + 1)
 Base.iterate(s::AbstractCurve) = iterate(s, 1)
 Base.IteratorSize(itertype::Type{AbstractCurve}) = Base.HasLength()
@@ -21,7 +21,14 @@ Base.minimum(s::AbstractCurve) = s[argmin(s.y)]
 Base.maximum(s::AbstractCurve) = s[argmax(s.y)]
 
 Base.:(==)(c0::AbstractCurve, c1::AbstractCurve) = c0.x == c1.x && c0.y == c1.y
-Base.:(+)(c::AbstractCurve, y) = typeof(c)(c.x, c.y .+ Float64.(y))
+Base.:(+)(c::AbstractCurve, y) = typeof(c)(c.x, c.y .+ y)
+Base.:(-)(c::AbstractCurve, y) = typeof(c)(c.x, c.y .- y)
+Base.:(*)(c::AbstractCurve, y) = typeof(c)(c.x, c.y .* y)
+Base.:(/)(c::AbstractCurve, y) = typeof(c)(c.x, c.y ./ y)
+Base.:(+)(y, c::AbstractCurve) = typeof(c)(c.x, y .+ c.y)
+Base.:(-)(y, c::AbstractCurve) = typeof(c)(c.x, y .- c.y)
+Base.:(*)(y, c::AbstractCurve) = typeof(c)(c.x, y .* c.y)
+Base.:(/)(y, c::AbstractCurve) = typeof(c)(c.x, y ./ c.y)
 Base.vcat(c0::AbstractCurve, c1::AbstractCurve) = typeof(c0)(vcat(c0.x, c1.x), vcat(c0.y, c1.y))
 
 function Base.show(io::IO, c::AbstractCurve)

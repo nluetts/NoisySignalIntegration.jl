@@ -63,12 +63,6 @@ end
 end
 
 
-@testset "get_linear_param()" begin
-    @test mci.get_linear_param(0, 0.5, 1, 1.5) == (1.0, 1.0)
-    @test mci.get_linear_param(3, 2, 3, 5) == (0.0, 1.0)
-end
-
-
 @testset "trapz()" begin
     # Test integration function trapz using analytic integrals;
     # integral functions (F) of functions f from
@@ -95,14 +89,27 @@ end
 
     begin
         x = collect(Float64, 1:10)
-        y = ones(Float64, length(x))
-        @test mci.trapz(x, y, 1, 3) == 0.0
-        @test mci.trapz(x, y, 1.1, 2.1) == 0.0
-        @test mci.trapz(x, y, 1.1, 1.2) == 0.0
-        @test mci.trapz(x, y, 1, 10) == 0.0
+        y = collect(Float64, 1:10)
+        @test mci.trapz(x, y, 1, 3, subtract_baseline=false) == 4.0
+        @test mci.trapz(x, y, 1.1, 2.1, subtract_baseline=false) ≈ 1.6
+        @test mci.trapz(x, y, 1.1, 1.2, subtract_baseline=false) ≈ 1.1*0.1 + 0.1*0.1*0.5
+        @test mci.trapz(x, y, 1.0, 1.1, subtract_baseline=false) ≈ 0.1 + 0.1*0.1*0.5
+        @test mci.trapz(x, y, 3.9, 4.0, subtract_baseline=false) ≈ 3.9*0.1 + 0.1*0.1*0.5
         @test mci.trapz(x, y, 0, 10) == 0.0
         @test mci.trapz(x, y, 1, 11) == 0.0
         @test mci.trapz(x, y, 0, 11) == 0.0
+    end
+
+    begin
+        x = [1, 2, 3, 4, 6, 7.0]
+        y = [1, 2, 4, 2.5, 3, 2]
+        @test mci.trapz(x, y, 1, 7, subtract_baseline=false) == 15.75
+        @test mci.trapz(x, y, 0, 10, subtract_baseline=false) == 15.75
+        @test mci.trapz(x, y, 1, 2, subtract_baseline=false) == 1.5
+        @test mci.trapz(x, y, 3, 4, subtract_baseline=false) == 3.25
+        @test mci.trapz(x, y, 1, 6, subtract_baseline=false) == 13.25
+        @test mci.trapz(x, y, 6, 1, subtract_baseline=false) == 13.25
+        @test mci.trapz(x, y, 1.5, 7, subtract_baseline=false) == 15.125
     end
 
 

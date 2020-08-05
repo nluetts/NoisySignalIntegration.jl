@@ -10,21 +10,6 @@ using Distributions: MvNormal
 using Plots
 using Random
 
-## Test spectrum
-
-curve = Curve([1.0, 2.0], [3.0, 4.0])
-@assert length(curve) == 2
-@assert curve[end] == (2.0, 4.0)
-@assert [curve; curve] == Curve([1.0, 2.0, 1.0, 2.0], [3.0, 4.0, 3.0, 4.0])
-@assert curve + curve.y == Curve([1.0, 2.0], [6.0, 8.0])
-
-curve = Noise([1.0, 2.0], [4.0, 4.0])
-@assert length(curve) == 2
-@assert curve[end][1] == 2.0
-@assert curve[end][2] + 1 ≈ 1.0
-@assert [curve; curve] == Noise([1.0, 2.0, 1.0, 2.0], [4.0, 4.0, 4.0, 4.0])
-
-##
 
 function get_test_spectrum(seed)
     Random.seed!(seed)
@@ -80,3 +65,10 @@ histogram(integral_samples, alpha=0.5, normalize=true)
 
 histogram(integral_samples[:, 1]./integral_samples[:, 4])
 histogram!(integral_samples[:, 3]./integral_samples[:, 2], alpha=0.5)
+
+## 
+x = collect(1:1.0:10)
+y = [-1.5, 0.0, 1.0, 2.0, 2.5, 2.0, 2.0, 1.0, 0.0, -1.5]
+c = Curve(x, y)
+scatter(c)
+plot!(c, 0.0, 9.5)
