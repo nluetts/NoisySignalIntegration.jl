@@ -31,7 +31,11 @@ spectrum = Curve(x, baseline + bands + noise)
 plot(spectrum, label="simulated spectrum")
 ```
 
-In order two apply the MCIntegrate uncertainty analysis, we must characterize the noise (to be able to simulate it in the Monte-Carlo draws), and we must set integration bounds and their associated uncertainty.
+In order two apply the MCIntegrate uncertainty analysis, we must perform 4 basic steps:
+1. crop from the spectrum the region that contains the signals and the region that contains merely noise
+1. characterize the noise (to be able to simulate it in the Monte-Carlo draws) 
+1. set integration bounds and their associated uncertainties
+1. run the `mcintegrate()` function
 
 Let's start by dividing the spectrum into the bands we want to integrate and the noise we
 want to analyse:
@@ -79,7 +83,7 @@ The generated noise samples look realistic. We can proceed with selecting integr
 
 ## Integration bounds
 
-MCIntegrate deals with uncertainty in placing integration bounds by expressing each bound by one ore more probability distributions. Any continuous, univariate distribution from the [Distributions.jl](https://github.com/JuliaStats/Distributions.jl) can be used to define integration bounds.
+MCIntegrate deals with uncertainty in placing integration bounds by expressing each bound by one ore more probability distributions. Any continuous, univariate distribution from [Distributions.jl](https://github.com/JuliaStats/Distributions.jl) can be used to define integration bounds.
 
 Three bound types are available at the moment:
 
@@ -98,7 +102,7 @@ plot(crop(spectrum, 20, 40), label="right peak")
 plot!([27, 32], [1.3, 1.3]; markershape=:cross, label="integration interval")
 ```
 
-It looks like integrating from about 27 to 32 would be appropriate, but there is some doubt of the exact location of the integration bounds. Perhaps a reasonable estimate is that the bound should start from 26 to 27 and go up to 32 to 33. This would be expressed with a `LeftRightBound` that is defined from two uniform distributions:
+It looks like integrating from about 27 to 32 would be appropriate, but there is some doubt of the exact location of the integration bounds. Perhaps a reasonable estimate is that the left bound falls in the range from 26 to 27 and the right bound in the range from 32 to 33. This would be expressed with a `LeftRightBound` that is defined using two uniform distributions:
 
 ```@example FTIR
 using Distributions: Uniform
@@ -115,7 +119,7 @@ using Plots: histogram, histogram!
 histogram(sample(lrb, 10_000); label=false)
 ```
 
-The uniform distribution is of course a bit of an awkward choice, because its probability density suddenly drops to 0, which perhaps does not model one's believe about the position of the integration bound very well. The normal distribution is often a natural choice:
+The uniform distribution is of course a bit of an awkward choice, because its probability density suddenly drops to 0, which perhaps does not model one's belief about the position of the integration bound very well. Ont the other hand, the normal distribution is often a natural choice when dealing with uncertainties:
 
 ```@example FTIR
 using Distributions: Normal
@@ -127,7 +131,7 @@ histogram(sample(lrb_normal, 10_000); label=false)
 
 However, in this particular case of describing the uncertainty of integration bounds, the tails of the normal distribution are problematic, because they lead to occasional extreme values of the intergration interval, which would not seem realistic.
 
-A compromise between the uniform and normal distribution which can be used to model the unertainty in the bound start and end point is a scaled and shifted beta(2, 2) distribution. Its shape resembles the shape of the normal distribution but it is missing the tails. MCIntegrate includes the function `scaled_shifted_beta(α, β, a, b) ` which can be used to generate a beta(α, β) distribution that has a support region in the interval a to b.
+A compromise between the uniform and normal distribution, that can be used to model the unertainty in the bound start and end values, is a scaled and shifted beta(2, 2) distribution. Its shape resembles the shape of the normal distribution but it is missing the tails. Since a scaled and shifted beta distribution does not ship with Distributions.jl, MCIntegrate includes the function `scaled_shifted_beta(α, β, a, b) ` which can be used to generate a beta(α, β) distribution that has a support region in the interval a to b.
 
 Again, a demonstration may help to explain. We keep the normal distribution for the right bound so we can compare the distributions easily:
 

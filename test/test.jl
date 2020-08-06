@@ -1,3 +1,8 @@
+"""
+This test file can be run manually to check some of the
+plotting functionallity.
+"""
+
 ##
 using Revise
 
@@ -58,7 +63,7 @@ p = histogram(sample(b2, 100000))
 plot(slc_bands, [b1, b2, b3, b4], noise_param)
 
 ##
-integral_samples = mc_integrate(slc_bands, noise_param, [b1, b2, b3, b4]; N=100_000)
+integral_samples = mc_integrate(slc_bands, [b1, b2, b3, b4], noise_param; N=100_000)
 
 ## 
 histogram(integral_samples, alpha=0.5, normalize=true)

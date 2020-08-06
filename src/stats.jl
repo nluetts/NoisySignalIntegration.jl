@@ -42,11 +42,6 @@ function sample!(s::AbstractArray{Float64}, nm::GaussianNoiseModel)
     return s
 end
 
-function sample(nm::GaussianNoiseModel, m::Integer=100, n::Integer=1)
-    s = Array{Float64}(undef, m, n)
-    return sample!(s, nm)
-end
-
 # MvGaussianNoiseModel
 
 function sample!(
@@ -57,9 +52,10 @@ function sample!(
     rand!(MvNormal(get_cov(nm.δx, m, nm.α, nm.λ)), s)
     return s
 end
-sample(nm::MvGaussianNoiseModel, m::Integer, n::Integer) = sample!(Array{Float64}(undef, m, n), nm)
-sample(nm::MvGaussianNoiseModel, m::Integer) = sample!(Array{Float64}(undef, m), nm)
-sample(nm::MvGaussianNoiseModel) = sample!(Array{Float64}(undef, 100), nm)
+
+sample(nm::AbstractNoiseModel, m::Integer, n::Integer) = sample!(Array{Float64}(undef, m, n), nm)
+sample(nm::AbstractNoiseModel, m::Integer) = sample!(Array{Float64}(undef, m), nm)
+sample(nm::AbstractNoiseModel) = sample!(Array{Float64}(undef, 100), nm)
 
 # LeftRightBound
 

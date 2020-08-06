@@ -69,6 +69,9 @@ struct Curve <: AbstractCurve
     end
 end
 
+Curve(x, y) = Curve(Float64.(x), Float64.(y))
+Curve(y) = Curve(1:length(y), Float64.(y))
+
 """
     Noise <: AbstractCurve
 
@@ -97,6 +100,10 @@ struct Noise <: AbstractCurve
 end
 
 Noise(x, y, n::Integer) = Noise(x, detrend(x, y, n))
+Noise(y, n::Integer=0) = begin
+    x = 1:length(y)
+    Noise(x, detrend(x, y, n))
+end
 Noise(s::Curve, n::Integer=0) = Noise(s.x, s.y, n)
 
 # -------------------------------------
