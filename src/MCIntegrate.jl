@@ -34,6 +34,8 @@ export
     plot_autocov,
     sample,
     sample!,
-    scale_shift_beta
+    scale_shift_beta,
+    SUBTRACT_LOCAL,
+    INCLUDE
 
 end # module

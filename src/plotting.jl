@@ -132,7 +132,7 @@ function get_left_right_points(x::AbstractArray{T}, y::AbstractArray{T}, left::T
 end
 
 
-@recipe function plot_recipe(crv::Curve, left::Float64, right::Float64)
+@recipe function plot_recipe(crv::Curve, left::Float64, right::Float64, blp::BaselinePolicy)
     fillrange := 0
     fillalpha --> 0.5
     fillcolor --> :orange
@@ -140,8 +140,13 @@ end
     label     --> nothing
 
     l, r, xl, xr, yl, yr = get_left_right_points(crv.x, crv.y, left, right)
-    x = [xl; crv.x[l+1:r-1]; xr; xl]
-    y = [yl; crv.y[l+1:r-1]; yr; yl]
+    if blp == SUBTRACT_LOCAL
+        x = [xl; crv.x[l+1:r-1]; xr; xl]
+        y = [yl; crv.y[l+1:r-1]; yr; yl]
+    else
+        x = [xl; crv.x[l+1:r-1]; xr; xr; xl]
+        y = [yl; crv.y[l+1:r-1]; yr; 0;  0 ]
+    end
     return x, y
 end
 
@@ -157,20 +162,25 @@ end
 
 @recipe function plot_recipe(crv::Curve, bnds::Vector{T}, nm::AbstractNoiseModel; samples=3) where {T <: AbstractUncertainBound}
     
-    legend --> :outertopright
+    legend --> :best
+    background_color_legend --> nothing
+    foreground_color_legend --> nothing
+    layout := @layout grid(samples+1, 1)
+    link := :both
 
     _, y_min = minimum(crv)
     _, y_max = maximum(crv)
 
-    span = (y_max - y_min) * 1.1
-
     # plot experimental spectrum with mean bounds
     @series begin
-        label := "experiment, mean bounds"
+        label := "original data, mean bounds"
+        showaxis := :y
+        subplot := 1
         crv
     end
-    for b in bnds
+    for (i, b) in enumerate(bnds)
         @series begin
+            subplot := 1
             if typeof(b) <: WidthBound
                 l, r, = left_right_from_peak(crv.x, crv.y, b.loc, mean(b.width))
             elseif typeof(b) == WidthBoundClone
@@ -179,26 +189,28 @@ end
             else
                 l, r = map(mean, [b.left, b.right])
             end
-            crv, l, r
+            crv, l, r, get_baseline_policy(b)
         end
     end
 
     # plot samples
     for i in 1:samples
-        crv_ = crv + (sample(nm, length(crv)) .+ span * i)
+        crv_ = crv + (sample(nm, length(crv)))
         @series begin
             label := "sample $i"
+            subplot := i + 1
             crv_
         end
     
         for b in bnds
             @series begin
                 label := nothing
+                subplot := i + 1
                 if typeof(b) == WidthBoundClone
                     :fillcolor --> :red
                 end
                 l, r = typeof(b) <: WidthBoundUnion ? sample(b, crv_) : sample(b)
-                crv_, l, r
+                crv_, l, r, get_baseline_policy(b)
             end
         end
     end

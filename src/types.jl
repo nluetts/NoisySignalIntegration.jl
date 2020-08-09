@@ -191,10 +191,19 @@ Subtypes must implement methods to sample integration bounds.
 """
 abstract type AbstractUncertainBound end
 
+@enum BaselinePolicy begin
+    SUBTRACT_LOCAL
+    INCLUDE
+end
+
+get_baseline_policy(bnd::AbstractUncertainBound) = bnd.baseline_policy
+get_baseline_policy(bnd::WidthBoundClone) = bnd.reference.baseline_policy
+
 struct LeftRightBound{S1<:ContinuousUnivariateDistribution,
                       S2<:ContinuousUnivariateDistribution} <: AbstractUncertainBound
     left::S1
     right::S2
+    baseline_policy::BaselinePolicy
 end
 
 # sample cache that is retrieved by `WidthBoundClone`s
@@ -203,11 +212,12 @@ const WIDTH_SAMPLES = Dict{Int, Array{Float64}}()
 struct WidthBound{T<:ContinuousUnivariateDistribution} <: AbstractUncertainBound
     loc::Float64
     width::T
+    baseline_policy::BaselinePolicy
     id::Int
-    function WidthBound(loc, width::T) where {T<:ContinuousUnivariateDistribution}
+    function WidthBound(loc::Float64, width::T, blp::BaselinePolicy) where {T<:ContinuousUnivariateDistribution}
         id = isempty(WIDTH_SAMPLES) ? 1 : maximum(keys(WIDTH_SAMPLES)) + 1
         WIDTH_SAMPLES[id] = []
-        return new{T}(Float64(loc), width, id)
+        return new{T}(loc, width, blp, id)
     end
 end
 

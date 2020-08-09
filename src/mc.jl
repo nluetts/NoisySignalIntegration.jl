@@ -6,7 +6,8 @@ function _mc_integrate!(integral_samples, curve::Curve, noise_samples, bounds, N
         curve_ = curve + noise_samples[:, i]
         for (j, b) in enumerate(bounds)
             bound_sample = typeof(b) <: WidthBoundUnion ? sample(b, curve) : sample(b)
-            integral_samples[i, j] = trapz(curve.x, curve_.y, bound_sample[1], bound_sample[2])
+            subtract_baseline = get_baseline_policy(b) == SUBTRACT_LOCAL ? true : false
+            integral_samples[i, j] = trapz(curve.x, curve_.y, bound_sample[1], bound_sample[2]; subtract_baseline=subtract_baseline)
         end
     end
     println()
