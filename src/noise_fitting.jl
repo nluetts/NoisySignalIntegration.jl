@@ -30,9 +30,6 @@ function get_cov(δx::Float64, n::Integer, α::Float64, λ::Float64)
     return Σ
 end
 
-# -------------------------------------
-# Fitting 
-# -------------------------------------
 
 function estimate_autocov(n::Curve)
     # check that spectral grid is equally spaced
@@ -74,7 +71,18 @@ function fit_noise(
     return fit.param
 end
 
-function fit_noise(n::Curve; α_guess=1.0, λ_guess=1.0)
-    lags, acov = estimate_autocov(n)
+function fit_noise(n::Curve; α_guess=1.0, λ_guess=1.0, detrend_order=2)
+    lags, acov = detrend(n, detrend_order) |> estimate_autocov
     fit_noise(lags, acov; α_guess=α_guess, λ_guess=λ_guess)
+end
+
+"""
+Generate correlated noise from a noise sample.
+"""
+function correlated_noise(noise_sample::Curve, len::Int, samples::Int; kw...)
+    n = noise_sample
+    α, λ = fit_noise(n; kw...)
+    δx = n.x[2] - n.x[1]
+    Σ = get_cov(δx, len, α, λ)
+    return Particles(samples, MvNormal(Σ))
 end

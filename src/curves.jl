@@ -94,3 +94,12 @@ function crop(s::AbstractCurve, left, right)
     j = searchsortedfirst(s.x, T(right))
     return S(s.x[i:j], s.y[i:j])
 end
+
+
+"""
+    detrend(x, y, poly_order)
+
+Subtract polynomial from y data.
+"""
+detrend(x, y, poly_order) = y - fit(x, y, poly_order).(x)
+detrend(c::Curve, poly_order) = Curve(c.x, detrend(c.x, c.y, poly_order))

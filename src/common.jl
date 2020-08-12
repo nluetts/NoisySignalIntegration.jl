@@ -18,12 +18,6 @@ function verify_same_length(x::AbstractArray, y::AbstractArray)
     return nothing
 end
 
-"""
-    detrend(x, y, poly_order)
-
-Subtract polynomial from y data.
-"""
-detrend(x, y, poly_order) = y - fit(x, y, poly_order).(x)
 
 """
     left_right_from_peak(x, y, p, w)
