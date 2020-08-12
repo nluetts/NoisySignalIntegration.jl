@@ -25,6 +25,10 @@ function get_left_right_points(x::AbstractArray{T}, y::AbstractArray{T}, left::T
                 xl = left
                 yl = lininterp(left, x₀, x₁, y₀, y₁)
                 l = j - 1
+            elseif x₀ == left
+                xl = left
+                yl = y₀
+                l = j
             else
                 # this case means that `left` <= x[1]
                 xl = x₀
@@ -99,13 +103,9 @@ end
     l, r, xl, xr, yl, yr = get_left_right_points(crv.x, crv.y, left, right)
     if subtract_baseline
         x = [xl; crv.x[l+1:r-1]; xr; xl]
-        #x = [xl; crv.x[l+1:r-1]; xr; xl]
         y = [yl; crv.y[l+1:r-1]; yr; yl]
-        #y = [yl; crv.y[l+1:r-1]; yr; yl]
     else
-        #x = [xl; crv.x[l+1:r-1]; xr; xr; xl]
         x = [xl; crv.x[l+1:r-1]; xr; xr; xl]
-        #y = [yl; crv.y[l+1:r-1]; yr; 0;  0 ]
         y = [yl; crv.y[l+1:r-1]; yr; 0;  0 ]
     end
     return x, y
