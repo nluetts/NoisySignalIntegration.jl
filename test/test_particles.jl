@@ -40,6 +40,18 @@ ubnd2 = UncertainBound(
     Particles(SAMPLES, scale_shift_beta(2.0, 2.0, 181.5, 182.0))
 )
 
+ubnd3 = UncertainBound(
+    15.0,
+    scale_shift_beta(2.0, 2.0, 3.0, 4.0),
+    unc_spec
+)
+
+ubnd4, ubnd5 = UncertainBound(
+    [15.0, 180.0],
+    scale_shift_beta(2.0, 2.0, 3.0, 4.0),
+    unc_spec
+)
+
 _get_N_samples(::Particles{T, N}) where {T, N} = N
 
-areas = mc_integrate(unc_spec, [ubnd1, ubnd2])
+areas = mc_integrate(unc_spec, [ubnd1, ubnd2, ubnd3, ubnd4, ubnd5])

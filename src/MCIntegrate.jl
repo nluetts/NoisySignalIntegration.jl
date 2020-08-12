@@ -13,8 +13,9 @@ using RecipesBase: @recipe
 using StatsBase: autocov
 
 include("common.jl")
-include("types.jl")
-include("stats.jl")
+include("curves.jl")
+include("bounds.jl")
+include("noise_fitting.jl")
 include("utils.jl")
 include("plotting.jl")
 include("mc.jl")

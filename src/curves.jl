@@ -1,6 +1,4 @@
-# -------------------------------------
-# Curves
-# -------------------------------------
+# Defines the Curve and UncertainCurve types for handeling (uncertain) x-y data
 
 """
     AbstractCurve
@@ -46,6 +44,7 @@ function Base.show(io::IO, c::AbstractCurve)
     end
 end
 
+
 """
     Curve{T} <: AbstractCurve
 
@@ -78,64 +77,20 @@ struct UncertainCurve{T, N} <: AbstractCurve
     y::Vector{Particles{T, N}}
 end
 
-struct UncertainBound{T, N}
-    left::Particles{T, N}
-    right::Particles{T, N}
-end
 
 get_draw(n, p::Particles) = p.particles[n]
 get_draw(n, uc::UncertainCurve) = [get_draw(n, yᵢ) for yᵢ in uc.y]
-get_draw(n, ub::UncertainBound) = [get_draw(n, ub.left), get_draw(n, ub.right)]
 
-# create a left/right bound
-function UncertainBound(left::S, right::T, N::Int=10_000) where {S <: ContinuousUnivariateDistribution, T <: ContinuousUnivariateDistribution}
-    left  = Particles(N, left)
-    right = Particles(N, right)
-    return UncertainBound(left, right)
-end
-
-# create a width bounds with correlated widths
-function UncertainBound(
-    pos::Vector{T},
-    width::ContinuousUnivariateDistribution,
-    uc::UncertainCurve{T, N}
-) where {T, N}
-
-    M = length(pos)
-    left = Array{T}(undef, N, M)
-    right = Array{T}(undef, N, M)
-    width = Particles(N, width)
-
-    for i ∈ 1:M
-        pᵢ = pos[i]
-        for j ∈ 1:N
-            cⱼ = get_draw(j, uc) # sample j from curve
-            wⱼ = get_draw(j, width) # sample j from width
-            left[i, j], right[i, j] = left_right_from_peak(uc.x, cⱼ, pᵢ, wⱼ)
-        end
-    end
-    
-    return [UncertainBound(Particles(left[i, :]), Particles(right[i, :])) for i in 1:M]
-end
-
-# create single width bound
-function UncertainBound(
-    pos::T,
-    width::ContinuousUnivariateDistribution,
-    uc::UncertainCurve{T, N}
-) where {T, N}
-    bnd = UncertainBound([pos], width, uc)
-    return bnd[1]
-end
-
-ScaledShiftedBeta = LocationScale{Float64, Beta{Float64}}
 
 """
-    scale_shift_beta(α, β, a, b)
+    crop(s::AbstractCurve, left, right)
 
-Create a scaled and shifted `Beta(α, β)` distribution.
-Samples fall in the interval [`a`, `b`].
+Crop a slice from a curve and return a new curve.
 """
-function scale_shift_beta(α, β, a, b)
-    return LocationScale(a, b - a, Beta(α, β))
+function crop(s::AbstractCurve, left, right)
+    T = eltype(s.x)
+    S = typeof(s)
+    i = searchsortedlast(s.x, T(left))
+    j = searchsortedfirst(s.x, T(right))
+    return S(s.x[i:j], s.y[i:j])
 end
