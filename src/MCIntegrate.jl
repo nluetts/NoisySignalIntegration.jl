@@ -4,6 +4,7 @@ using Distributions: ContinuousUnivariateDistribution
 using Distributions: MvNormal, Beta, LocationScale, mean
 using LinearAlgebra: eachcol
 using LsqFit: curve_fit
+using MonteCarloMeasurements: Particles
 using Plots
 using Polynomials: fit
 using Printf: @printf, @sprintf
@@ -20,20 +21,14 @@ include("mc.jl")
 
 export
     Curve,
-    GaussianNoiseModel,
-    LeftRightBound,
-    MvGaussianNoiseModel,
     Noise,
-    WidthBound,
-    WidthBoundClone,
-    clone,
+    UncertainCurve,
+    UncertainBound,
     crop,
     fit_noise,
     get_cov,
     mc_integrate,
-    plot_autocov,
-    sample,
-    sample!,
+    #plot_autocov,
     scale_shift_beta,
     SUBTRACT_LOCAL,
     INCLUDE

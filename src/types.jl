@@ -13,7 +13,7 @@ abstract type AbstractCurve end
 Base.length(s::AbstractCurve) = length(s.x)
 Base.lastindex(s::AbstractCurve) = length(s)
 Base.getindex(s::AbstractCurve, i::Integer) = (s.x[i], s.y[i])
-Base.getindex(s::AbstractCurve, r::UnitRange) = Curve(s.x[r], s.y[r])
+Base.getindex(s::AbstractCurve, r::UnitRange) = typeof(s)(s.x[r], s.y[r])
 Base.iterate(s::AbstractCurve, i::Int64) = i > length(s) ? nothing : (s[i], i + 1)
 Base.iterate(s::AbstractCurve) = iterate(s, 1)
 Base.IteratorSize(itertype::Type{AbstractCurve}) = Base.HasLength()
@@ -41,136 +41,93 @@ function Base.show(io::IO, c::AbstractCurve)
         indicator = ""
     end
     for (i, p) in enumerate(ps)
-        @printf "    %-5e %-5e\n" p...
+        println(p)#@printf "    %-5e %-5e\n" p...
         i == 5 ? print(indicator) : nothing
     end
 end
 
 """
-    Curve <: AbstractCurve
+    Curve{T} <: AbstractCurve
 
 Datatype holding x-y data.
 x and y vectors have to have the same length.
 
 # Fields
-- `x::Vector{Float64}` : spectral grid
-- `y::Vector{Float64}` : spectral intensity
+- `x::Vector{T}` : x-grid
+- `y::Vector{T}` : y-values
 
 # Constructors
 
-    Curve(x::Vector{Float64}, y::Vector{Float64})
+    Curve(x::Vector{T}, y::Vector{T})
+    Curve(y::Vector{T})
 """
-struct Curve <: AbstractCurve
-    x::Vector{Float64}
-    y::Vector{Float64}
-    function Curve(x::Vector{Float64}, y::Vector{Float64})
+struct Curve{T} <: AbstractCurve
+    x::Vector{T}
+    y::Vector{T}
+    function Curve{T}(x::Vector{T}, y::Vector{T}) where {T}
         verify_same_length(x, y)
-        return new(x, y)
+        return new{T}(x, y)
     end
 end
+Curve(x::Vector{T}, y::Vector{T}) where T = Curve{T}(x, y)
+Curve(y::T) where T = Curve(collect(T, 1:length(y)), y)
 
-Curve(x, y) = Curve(Float64.(x), Float64.(y))
-Curve(y) = Curve(1:length(y), Float64.(y))
 
-"""
-    Noise <: AbstractCurve
+struct UncertainCurve{T, N} <: AbstractCurve
+    x::Vector{T}
+    y::Vector{Particles{T, N}}
+end
 
-Curve holding a noise sample. At minimum, a constant offset
-is removed from the noise sample upon construction.
-If provided, a ploynomial of order `n` is subtracted.
+struct UncertainBound{T, N}
+    left::Particles{T, N}
+    right::Particles{T, N}
+end
 
-# Fields
-- `x::Vector{Float64}` : spectral grid
-- `y::Vector{Float64}` : spectral intensity
+get_draw(n, p::Particles) = p.particles[n]
+get_draw(n, uc::UncertainCurve) = [get_draw(n, yᵢ) for yᵢ in uc.y]
+get_draw(n, ub::UncertainBound) = [get_draw(n, ub.left), get_draw(n, ub.right)]
 
-# Constructors
-    Noise(x::Vector{Float64}, y::Vector{Float64})
-    Noise(x::Vector{Float64}, y::Vector{Float64}, n::Integer)
-    Noise(s::Curve)
-    Noise(s::Curve, n::Integer)
+# create a left/right bound
+function UncertainBound(left::S, right::T, N::Int=10_000) where {S <: ContinuousUnivariateDistribution, T <: ContinuousUnivariateDistribution}
+    left  = Particles(N, left)
+    right = Particles(N, right)
+    return UncertainBound(left, right)
+end
 
-"""
-struct Noise <: AbstractCurve
-    x::Vector{Float64}
-    y::Vector{Float64}
-    function Noise(x, y)
-        verify_same_length(x, y)
-        return new(x, detrend(Float64.(x), Float64.(y), 0))
+# create a width bounds with correlated widths
+function UncertainBound(
+    pos::Vector{T},
+    width::ContinuousUnivariateDistribution,
+    uc::UncertainCurve{T, N}
+) where {T, N}
+
+    M = length(pos)
+    left = Array{T}(undef, N, M)
+    right = Array{T}(undef, N, M)
+    width = Particles(N, width)
+
+    for i ∈ 1:M
+        pᵢ = pos[i]
+        for j ∈ 1:N
+            cⱼ = get_draw(j, uc) # sample j from curve
+            wⱼ = get_draw(j, width) # sample j from width
+            left[i, j], right[i, j] = left_right_from_peak(uc.x, cⱼ, pᵢ, wⱼ)
+        end
     end
+    
+    return [UncertainBound(Particles(left[i, :]), Particles(right[i, :])) for i in 1:M]
 end
 
-Noise(x, y, n::Integer) = Noise(x, detrend(x, y, n))
-Noise(y, n::Integer=0) = begin
-    x = 1:length(y)
-    Noise(x, detrend(x, y, n))
-end
-Noise(s::Curve, n::Integer=0) = Noise(s.x, s.y, n)
-
-# -------------------------------------
-# Noise models
-# -------------------------------------
-
-"""
-    AbstractNoiseModel
-
-Supertype of noise models.
-Subtypes must support the following methods:
-
-- `sample(nm::NoiseModel, m::Integer [, n::Integer])` :: Array{Float64, 2}
-  with:
-  `m` = no. of data points per noise sample
-  `n` = no. of noise samples
-"""
-abstract type AbstractNoiseModel end
-
-"""
-    GaussianNoiseModel
-
-Model to describe noise following a univariate Gaussian distribution
-(uncorrelated noise).
-
-# Fields
-- `σ::T` : standard deviation
-"""
-struct GaussianNoiseModel <: AbstractNoiseModel
-    σ::Float64
-    GaussianNoiseModel(σ) = new(Float64(σ))
-end
-function Base.show(io::IO, nm::GaussianNoiseModel)
-    println("GaussianNoiseModel(σ = $(nm.σ))")
+# create single width bound
+function UncertainBound(
+    pos::T,
+    width::ContinuousUnivariateDistribution,
+    uc::UncertainCurve{T, N}
+) where {T, N}
+    bnd = UncertainBound([pos], width, uc)
+    return bnd[1]
 end
 
-"""
-    MvGaussianNoiseModel
-
-Model to describe noise following a multivariate Gaussian distribution
-(correlated noise).
-
-# Fields
-- `δx::Float64`: noise grid spacing
-- `α::Float64` : autocovariance amplitude
-- `λ::Float64` : autocovaraiance lag
-"""
-struct MvGaussianNoiseModel <: AbstractNoiseModel
-    δx::Float64
-    α::Float64
-    λ::Float64
-end
-
-function Base.show(io::IO, nm::MvGaussianNoiseModel)
-    println("MvGaussianNoiseModel(α = $(nm.α), λ = $(nm.λ))")
-end
-
-# -------------------------------------
-# Bounds
-# -------------------------------------
-
-"""
-    ScaledShiftedBeta
-
-Scaled and shifted `Beta(α, β)` distribution.
-Samples fall in the interval [`a`, `b`].
-"""
 ScaledShiftedBeta = LocationScale{Float64, Beta{Float64}}
 
 """
@@ -181,47 +138,4 @@ Samples fall in the interval [`a`, `b`].
 """
 function scale_shift_beta(α, β, a, b)
     return LocationScale(a, b - a, Beta(α, β))
-end
-
-"""
-    AbstractUncertainBound
-
-Supertype of uncertain bounds.
-Subtypes must implement methods to sample integration bounds.
-"""
-abstract type AbstractUncertainBound end
-
-@enum BaselinePolicy begin
-    SUBTRACT_LOCAL
-    INCLUDE
-end
-
-get_baseline_policy(bnd::AbstractUncertainBound) = bnd.baseline_policy
-get_baseline_policy(bnd::WidthBoundClone) = bnd.reference.baseline_policy
-
-struct LeftRightBound{S1<:ContinuousUnivariateDistribution,
-                      S2<:ContinuousUnivariateDistribution} <: AbstractUncertainBound
-    left::S1
-    right::S2
-    baseline_policy::BaselinePolicy
-end
-
-# sample cache that is retrieved by `WidthBoundClone`s
-const WIDTH_SAMPLES = Dict{Int, Array{Float64}}()
-
-struct WidthBound{T<:ContinuousUnivariateDistribution} <: AbstractUncertainBound
-    loc::Float64
-    width::T
-    baseline_policy::BaselinePolicy
-    id::Int
-    function WidthBound(loc::Float64, width::T, blp::BaselinePolicy) where {T<:ContinuousUnivariateDistribution}
-        id = isempty(WIDTH_SAMPLES) ? 1 : maximum(keys(WIDTH_SAMPLES)) + 1
-        WIDTH_SAMPLES[id] = []
-        return new{T}(loc, width, blp, id)
-    end
-end
-
-struct WidthBoundClone <: AbstractUncertainBound
-    loc::Float64
-    reference::WidthBound
 end

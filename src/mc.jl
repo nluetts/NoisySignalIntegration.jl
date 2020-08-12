@@ -1,51 +1,14 @@
-WidthBoundUnion = Union{WidthBound, WidthBoundClone}
-
-function _mc_integrate!(integral_samples, curve::Curve, noise_samples, bounds, N)
-    for i in 1:N
+function mc_integrate(us::UncertainCurve{T, N}, bnds::Vector{UncertainBound{T, M}}) where {T, M, N}
+    M != N && error("Samples sizes incompatible")
+    
+    areas = Array{Float64}(undef, N, length(bnds))
+    for i ∈ 1:N
         i % 100 == 0 && print("Integrating draw $i/$N \r")
-        curve_ = curve + noise_samples[:, i]
-        for (j, b) in enumerate(bounds)
-            bound_sample = typeof(b) <: WidthBoundUnion ? sample(b, curve) : sample(b)
-            subtract_baseline = get_baseline_policy(b) == SUBTRACT_LOCAL ? true : false
-            integral_samples[i, j] = trapz(curve.x, curve_.y, bound_sample[1], bound_sample[2]; subtract_baseline=subtract_baseline)
+        y = get_draw(i, us)
+        for (j, b) in enumerate(bnds)
+            l, r = get_draw(i, b)
+            areas[i, j] = MCIntegrate.trapz(us.x, y, l, r)
         end
     end
-    println()
+    return [Particles(areas[:,i]) for i in 1:size(areas)[2]]
 end
-
-
-function mc_integrate(
-    crv::Curve,
-    bs::Vector{T},
-    nm::AbstractNoiseModel
-    ;
-    N::Int64=100_000
-) where {T<:AbstractUncertainBound}   
-
-    integral_samples = Array{Float64}(undef, N, length(bs))
-
-    # sample noise and bounds
-    print("\nPreparing noise samples ... ")
-    noise_samples = sample(nm, length(crv), N)
-    print("done.\n")
-    
-    _mc_integrate!(integral_samples, crv, noise_samples, bs, N)
-
-    return integral_samples
-end # mc_integrate
-
-
-function mc_integrate(
-    crv::Curve,
-    bs::Vector{T},
-    noise_samples::Array{Float64, 2}
-    ;
-    N::Int64=100_000
-) where {T<:AbstractUncertainBound}   
-
-    integral_samples = Array{Float64}(undef, N, length(bs))
-    
-    _mc_integrate!(integral_samples, crv, noise_samples, bs, N)
-
-    return integral_samples
-end # mc_integrate
