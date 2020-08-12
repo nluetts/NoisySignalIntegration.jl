@@ -28,6 +28,7 @@ export
     fit_noise,
     get_cov,
     mc_integrate,
+    plot,
     #plot_autocov,
     scale_shift_beta,
     SUBTRACT_LOCAL,
