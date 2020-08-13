@@ -196,9 +196,6 @@ abstract type AbstractUncertainBound end
     INCLUDE
 end
 
-get_baseline_policy(bnd::AbstractUncertainBound) = bnd.baseline_policy
-get_baseline_policy(bnd::WidthBoundClone) = bnd.reference.baseline_policy
-
 struct LeftRightBound{S1<:ContinuousUnivariateDistribution,
                       S2<:ContinuousUnivariateDistribution} <: AbstractUncertainBound
     left::S1
@@ -225,3 +222,6 @@ struct WidthBoundClone <: AbstractUncertainBound
     loc::Float64
     reference::WidthBound
 end
+
+get_baseline_policy(bnd::AbstractUncertainBound) = bnd.baseline_policy
+get_baseline_policy(bnd::WidthBoundClone) = bnd.reference.baseline_policy
