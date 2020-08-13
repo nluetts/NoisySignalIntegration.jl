@@ -55,8 +55,6 @@ function UncertainBound(
 end
 
 
-ScaledShiftedBeta = LocationScale{Float64, Beta{Float64}}
-
 """
     scale_shift_beta(α, β, a, b)
 
