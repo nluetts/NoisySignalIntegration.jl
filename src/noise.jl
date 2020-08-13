@@ -62,6 +62,8 @@ struct GaussianNoiseModel{T <: Real} <: AbstractNoiseModel
     σ::T
 end
 
+Base.eltype(::GaussianNoiseModel{T}) where T = T
+
 function Base.show(io::IO, nm::GaussianNoiseModel)
     println("GaussianNoiseModel(σ = $(nm.σ))")
 end
@@ -82,6 +84,8 @@ struct MvGaussianNoiseModel{T <: Real} <: AbstractNoiseModel
     α::T
     λ::T
 end
+
+Base.eltype(::MvGaussianNoiseModel{T}) where T = T
 
 function Base.show(io::IO, nm::MvGaussianNoiseModel)
     println("MvGaussianNoiseModel(α = $(nm.α), λ = $(nm.λ))")

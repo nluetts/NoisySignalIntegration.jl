@@ -8,6 +8,7 @@ Subtypes need to implement fields `x` and `y`.
 """
 abstract type AbstractCurve end
 
+Base.eltype(s::AbstractCurve) = eltype(s.x)
 Base.length(s::AbstractCurve) = length(s.x)
 Base.lastindex(s::AbstractCurve) = length(s)
 Base.getindex(s::AbstractCurve, i::Integer) = (s.x[i], s.y[i])
