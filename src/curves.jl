@@ -75,7 +75,13 @@ Curve(y::T) where T = Curve(collect(T, 1:length(y)), y)
 struct UncertainCurve{T, N} <: AbstractCurve
     x::Vector{T}
     y::Vector{Particles{T, N}}
+    function UncertainCurve{T, N}(x::Vector{T}, y::Vector{Particles{T, N}}) where {T, N}
+        verify_same_length(x, y)
+        return new{T, N}(x, y)
+    end
 end
+UncertainCurve(x::Vector{T}, y::Vector{Particles{T, N}}) where {T, N} = UncertainCurve{T, N}(x, y)
+UncertainCurve(y::Vector{Particles{T, N}}) where {T, N} = UncertainCurve(collect(T, 1:length(y)), y)
 
 
 get_draw(n, p::Particles) = p.particles[n]
@@ -94,12 +100,3 @@ function crop(s::AbstractCurve, left, right)
     j = searchsortedfirst(s.x, T(right))
     return S(s.x[i:j], s.y[i:j])
 end
-
-
-"""
-    detrend(x, y, poly_order)
-
-Subtract polynomial from y data.
-"""
-detrend(x, y, poly_order) = y - fit(x, y, poly_order).(x)
-detrend(c::Curve, poly_order) = Curve(c.x, detrend(c.x, c.y, poly_order))

@@ -32,22 +32,6 @@ end
 end
 
 
-@testset "detrend()" begin
-    for n ∈ 2:4
-        @test begin
-            x = collect(Float64, 1:20)
-            y = x.^n
-            all(yᵢ + 1.0 ≈ 1.0 for yᵢ ∈ mci.detrend(x, y, n)) == true
-        end
-    end
-    @test begin
-        x = collect(Float64, 1:20)
-        y = @. 0.1 + 2x - 0.01x^2
-        all(yᵢ + 1.0 ≈ 1.0 for yᵢ ∈ mci.detrend(x, y, 2)) == true
-    end
-end
-
-
 @testset "left_right_from_peak()" begin
     x = collect(Float64, 1:20)
     y = zeros(Float64, 20)

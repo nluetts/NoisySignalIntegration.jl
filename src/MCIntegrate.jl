@@ -15,23 +15,26 @@ using StatsBase:            autocov
 include("common.jl")
 include("curves.jl")
 include("bounds.jl")
-include("noise_fitting.jl")
+include("noise.jl")
 include("plotting.jl")
-include("mc.jl")
+include("integration.jl")
 
 export
     Curve,
+    GaussianNoiseModel,
+    MvGaussianNoiseModel,
+    NoiseSample,
     UncertainCurve,
     UncertainBound,
+    add_noise,
     correlated_noise,
     crop,
     fit_noise,
     get_cov,
     mc_integrate,
     plot,
-    #plot_autocov,
+    plot_autocov,
     scale_shift_beta,
-    SUBTRACT_LOCAL,
-    INCLUDE
+    uncorrelated_noise
 
 end # module

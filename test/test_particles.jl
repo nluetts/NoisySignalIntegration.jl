@@ -23,10 +23,11 @@ function get_test_spectrum(seed)
 end
 
 spec = get_test_spectrum(1);
-noise = crop(spec, 50, 200)
+noise = NoiseSample(crop(spec, 50, 200), 3)
 spec = crop(spec, 10, 40)
 
-unc_spec = UncertainCurve(spec.x, spec.y + correlated_noise(noise, length(spec), SAMPLES));
+nm = fit_noise(noise)
+unc_spec = add_noise(spec, nm, SAMPLES)
 
 ubnd1 = UncertainBound(
     Particles(SAMPLES, scale_shift_beta(2.0, 2.0, 13.0, 13.5)),
@@ -49,6 +50,7 @@ ubnd4, ubnd5 = UncertainBound(
     unc_spec
 )
 
-_get_N_samples(::Particles{T, N}) where {T, N} = N
-
 areas = mc_integrate(unc_spec, [ubnd1, ubnd2, ubnd3, ubnd4, ubnd5])
+
+# test add uncorrelated noise
+add_noise(spec, GaussianNoiseModel(1.0)) |> x -> mcplot(x.y, 100, alpha=0.1)

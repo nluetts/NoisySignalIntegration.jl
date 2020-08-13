@@ -2,7 +2,7 @@ function mc_integrate(us::UncertainCurve{T, N}, bnds::Vector{UncertainBound{T, M
 
     M != N && error("Samples sizes incompatible")
     
-    areas = Array{Float64}(undef, N, length(bnds))
+    areas = Array{T}(undef, N, length(bnds))
     for i ∈ 1:N
         i % 1000 == 0 && print("Integrating draw $i/$N \r")
         y = get_draw(i, us)
