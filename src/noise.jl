@@ -173,20 +173,20 @@ end
 """
 Generate correlated noise from a noise sample or noise model.
 """
-function correlated_noise(nm::MvGaussianNoiseModel{T}, len::Int, samples::Int) where {T <: Real}
+function generate_noise(nm::MvGaussianNoiseModel{T}, len::Int, samples::Int) where {T <: Real}
     Σ = get_cov(nm, len)
     return Particles(samples, MvNormal(Σ))
 end
-function correlated_noise(ns::NoiseSample, samples::Int; kw...)
+function generate_noise(ns::NoiseSample, samples::Int; kw...)
     nm = fit_noise(ns; kw...)
     δx = ns.x[2] - ns.x[1]
-    return correlated_noise(nm, length(ns), samples)
+    return generate_noise(nm, length(ns), samples)
 end
 
 """
 Generate uncorrelated noise from a GaussianNoiseModel.
 """
-function uncorrelated_noise(nm::GaussianNoiseModel{T}, len::Int, samples::Int) where {T <: Real}
+function generate_noise(nm::GaussianNoiseModel{T}, len::Int, samples::Int) where {T <: Real}
     return Particles(samples, MvNormal(zeros(T, len), nm.σ))
 end
 

@@ -1,5 +1,7 @@
 function get_left_right_points(x::AbstractArray{T}, y::AbstractArray{T}, left::T, right::T; subtract_baseline=true) where {T<:AbstractFloat}
-    
+
+    # this function is required to plot integration areas
+
     left, right = left < right ? (left, right) : (right, left)
 
     N = length(x)
@@ -64,27 +66,60 @@ end
 
 
 # --------------------------------------
-# enable plotting of noise sample draws
+# enable plotting of sample draws
 # --------------------------------------
 
-@recipe function plot_recipe(ns::Curve, uc::UncertainCurve, noise_samples=4)
+@recipe function plot_recipe(c::AbstractCurve, uc::UncertainCurve, draws=4)
     noise_samples < 0 && throw(ArgumentError("Number of samples must be > 0."))
 
     legend := :none
-    layout := @layout grid(noise_samples + 1, 1)
+    layout := @layout grid(draws + 1, 1)
     link := :both
     
     delete!(plotattributes, :noise_samples)
     
-    for i ∈ 0:noise_samples
+    for i ∈ 0:draws
         @series begin
             yguide := i == 0 ? "input" : "sample $(i)"
             subplot := i + 1
             if i == 0
-                ns.x, ns.y
+                c.x, c.y
             else
                 uc.x, get_draw(i, uc)
             end
+        end
+    end
+end
+
+# this seems to conflict with plot_autocov()
+"""function Plots.plot(c::AbstractCurve, nm::AbstractNoiseModel, draws=4; kw...)
+    noise = add_noise(Curve(c.x), zeros(eltype(c), length(c)), nm)
+    return Plots.plot(c, noise, draws; kw...)
+end"""
+    
+
+
+
+# --------------------------------------
+# enable plotting of noise sample draws
+# --------------------------------------
+
+@recipe function plot_recipe(nm::AbstractNoiseModel; grid_points=1000, draws=3)
+    draws < 0 && throw(ArgumentError("Number of samples must be > 0."))
+
+    layout := @layout grid(draws, 1)
+    legend --> :none
+    link := :both
+
+    delete!(plotattributes, :grid_points)
+    delete!(plotattributes, :draws)
+
+    S = generate_noise(nm, grid_points, draws)
+    for i ∈ 1:draws
+        @series begin
+            subplot := i
+            yguide := "sample $(i)"
+            get_draw.(i, S)
         end
     end
 end
@@ -115,9 +150,9 @@ end
 # -----------------------------------
 # enable plotting of auto covariance
 # -----------------------------------
-struct AutoCovPlot end # just for dispatch
+struct _AutoCovPlot end # just for dispatch
 
-@recipe function plot_repice(ns::NoiseSample, nm::MvGaussianNoiseModel, ::Type{AutoCovPlot})
+@recipe function plot_repice(ns::NoiseSample, nm::MvGaussianNoiseModel, ::Type{_AutoCovPlot})
     xguide := "lag"
     yguide := "auto-covariance"
 
@@ -136,4 +171,4 @@ struct AutoCovPlot end # just for dispatch
     end
 end
 
-plot_autocov(ns::NoiseSample, nm::MvGaussianNoiseModel; kw...) = plot(ns, nm, AutoCovPlot; kw...)
+plot_autocov(ns::NoiseSample, nm::MvGaussianNoiseModel; kw...) = plot(ns, nm, _AutoCovPlot; kw...)

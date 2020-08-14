@@ -27,14 +27,13 @@ export
     UncertainCurve,
     UncertainBound,
     add_noise,
-    correlated_noise,
+    generate_noise,
     crop,
     fit_noise,
     get_cov,
     mc_integrate,
     plot,
     plot_autocov,
-    scale_shift_beta,
-    uncorrelated_noise
+    scale_shift_beta
 
 end # module

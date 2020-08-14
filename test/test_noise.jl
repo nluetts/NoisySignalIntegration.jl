@@ -106,20 +106,23 @@ end
 end
 
 
-@testset "correlated_noise()" begin
+@testset "generate_noise() (correlated)" begin
     let
         nm = MvGaussianNoiseModel(1.0, 3.0, 5.0)
-        noise = correlated_noise(nm, 100, 2000)
+        noise = generate_noise(nm, 100, 2000)
         @test length(noise) == 100
         @test noise |> first |> x -> x.particles |> length == 2000
+        ns = NoiseSample(mci.get_draw.(1, noise))
+        noise2 = generate_noise(ns, 100)
+        @test noise2 |> first |> x -> x.particles |> length == 100
     end
 end
 
 
-@testset "uncorrelated_noise()" begin
+@testset "generate_noise() (uncorrelated)" begin
     let
         nm = GaussianNoiseModel(1.0)
-        noise = uncorrelated_noise(nm, 100, 2000)
+        noise = generate_noise(nm, 100, 2000)
         @test length(noise) == 100
         @test noise |> first |> x -> x.particles |> length == 2000
     end
@@ -136,7 +139,7 @@ end
                              (0.5, 2.0, 0.5),
                              (2.0, 0.5, 3.0)]
             nm = MvGaussianNoiseModel(δxᵢ, αᵢ, λᵢ)
-            noise = correlated_noise(nm, len, samples)
+            noise = generate_noise(nm, len, samples)
             A = Float64[]
             Λ = Float64[]
             for i in 1:samples
