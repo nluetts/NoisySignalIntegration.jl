@@ -272,3 +272,6 @@ struct _AutoCovPlot end # just for dispatch
 end
 
 plot_autocov(ns::NoiseSample, nm::MvGaussianNoiseModel; kw...) = plot(ns, nm, _AutoCovPlot; kw...)
+
+
+MonteCarloMeasurements.mcplot(uc::UncertainCurve; draws=10, alpha=0.5, kw...) = MonteCarloMeasurements.mcplot(uc.x, uc.y, draws; alpha=0.5, kw...)

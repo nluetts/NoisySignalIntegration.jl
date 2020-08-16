@@ -1,4 +1,5 @@
-using Documenter, MCIntegrate
+using Documenter
+using MCIntegrate
 
 makedocs(
     sitename="MCIntegrate.jl Documentation",

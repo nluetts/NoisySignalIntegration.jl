@@ -1,7 +1,7 @@
 
 # Usage guide
 
-As a usage example, we will go through the analysis of FTIR and Raman band signals.
+As an usage example, we will go through the analysis of FTIR and Raman band signals.
 
 Suppose we measured an FTIR spectrum that looks like the following simulation:
 
@@ -32,36 +32,38 @@ plot(spectrum, label="simulated spectrum")
 ```
 
 In order two apply the MCIntegrate uncertainty analysis, we must perform 4 basic steps:
-1. crop from the spectrum the region that contains the signals and the region that contains merely noise
-1. characterize the noise (to be able to simulate it in the Monte-Carlo draws) 
-1. set integration bounds and their associated uncertainties
-1. run the `mcintegrate()` function
+1. Crop from the spectrum the region that contains the signals and the region that contains a representative sample of the noise
+1. Characterize the noise (to be able to simulate it in the Monte-Carlo draws) 
+1. Set integration bounds and their associated uncertainties
+1. Run the `mcintegrate()` function
+
+## Cropping the spectrum
 
 Let's start by dividing the spectrum into the bands we want to integrate and the noise we
-want to analyse:
+want to analyse. We can do this by using the `crop()` function.
 
 ```@example FTIR
 slice_bands = crop(spectrum,  5.0,  40.0)
 slice_noise = crop(spectrum, 40.0, 100.0)
 
-plot(slice_bands; color=:blue, label="bands")
-plot!(slice_noise; color=:red, label="noise")
+plot(slice_bands; label="bands")
+plot!(slice_noise; label="noise")
 ```
 
 ## Noise analysis
 
-The spectrum has a quite considerable baseline which constitutes a problem when analysing the noise. To prepare the noise spectrum `slice_noise` for analysis, we create a `Noise` object. Upon construction of the `Noise` object, a polynomial is fitted and subtracted to remove the baseline:
+The spectrum has a quite considerable baseline which constitutes a problem when analysing the noise. To prepare the noise spectrum `slice_noise` for analysis, we create a `NoiseSample` object. Upon construction of the `NoiseSample` object, a polynomial is fitted and subtracted to remove the baseline:
 
 ```@example FTIR
-noise = Noise(slice_noise, 3) # 3 = remove third order polynomial baseline
+noise = NoiseSample(slice_noise, 3) # 3 = remove third order polynomial baseline
 nothing # hide
 ```
 
-Plotting the original slice and the `Noise` object shows the data after baseline removal:
+Plotting the original slice and the `NoiseSample` object shows the data after baseline removal:
 
 ```@example FTIR
 plot(slice_noise, label="cropped noise")
-plot!(noise, label="Noise object")
+plot!(noise, label="NoiseSample object")
 ```
 
 In order to simulate the noise, we must determine its characteristics.
@@ -73,25 +75,50 @@ nm = fit_noise(noise)
 plot_autocov(noise, nm)
 ```
 
-Plotting the model next to the noise object is an important sanity check to verify that the fitting yielded a sensible estimate and that generated noise samples do mimic the experimental noise.
+Plotting the model next to the noise object is an important sanity check to verify that the fitting yielded a sensible estimate and that generated noise samples do mimic the experimental noise. They keyword `draws` controls how many random generated noise draws are plotted.
 
 ```@example FTIR
 plot(noise, nm)
 ```
 
-The generated noise samples look realistic. We can proceed with selecting integration bounds.
+## Preparing the spectrum for integration
+
+Now that we have a noise model, we can generate an `UncertainCurve`. An `UncertainCurve` holds random draws of the original spectrum plus noise:
+
+```@example FTIR
+uncertain_spectrum = add_noise(slice_bands, nm, 50_000)
+nothing # hide
+```
+
+If we plot the `uncertain_spectrum`, we get a ribbon plot showing a 95% confidence band:
+
+```@example FTIR
+plot(uncertain_spectrum)
+```
+
+We can plot also single draws by using the `mcplot()` function from `MonteCarloMeasurements.jl`:
+
+```@example FTIR
+using MonteCarloMeasurements
+
+mcplot(uncertain_spectrum; draws=20)
+```
+
 
 ## Integration bounds
 
 MCIntegrate deals with uncertainty in placing integration bounds by expressing each bound by one ore more probability distributions. Any continuous, univariate distribution from [Distributions.jl](https://github.com/JuliaStats/Distributions.jl) can be used to define integration bounds.
 
-Three bound types are available at the moment:
+To define integration bounds, the `UncertainBound` object is used.
+There are several options available to create an `UncertainBound`:
 
-- `LeftRightBound`
-- `WidthBound`
-- `WidthBoundClone`
+1. Passing two distributions
+1. Passing a position, a distribution, and an `UncertainCurve`
+1. Passing a vector of positions, a distribution, and an `UncertainCurve`
 
-### `LeftRightBound`
+### Defining the bound using a start and end point
+
+If two distributions are passed to `UncertainBound()`, they will be used to 
 
 A `LeftRightBound` is used to specify an integration window by a start and an end point. Start and end point are expressed by probability distributions.
 

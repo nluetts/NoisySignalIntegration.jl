@@ -4,7 +4,7 @@ using Distributions:        ContinuousUnivariateDistribution
 using Distributions:        MvNormal, Beta, LocationScale, mean
 using LinearAlgebra:        eachcol
 using LsqFit:               curve_fit
-using MonteCarloMeasurements: Particles
+using MonteCarloMeasurements
 using Plots
 using Polynomials:          fit
 using Printf:               @printf, @sprintf
