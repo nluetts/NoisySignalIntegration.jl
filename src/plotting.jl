@@ -1,3 +1,6 @@
+const DEFAULT_COLOR = palette(:default)[1]
+
+
 function get_left_right_points(x::AbstractArray{T}, y::AbstractArray{T}, left::T, right::T; subtract_baseline=true) where {T<:AbstractFloat}
 
     # this function is required to plot integration areas
@@ -59,8 +62,6 @@ function get_left_right_points(x::AbstractArray{T}, y::AbstractArray{T}, left::T
 end
 
 @recipe function plot_recipe(crv::AbstractCurve)
-    xguide --> "x"
-    yguide --> "y"
     return crv.x, crv.y
 end
 
@@ -69,72 +70,41 @@ end
 # enable plotting of sample draws
 # --------------------------------------
 
-@recipe function plot_recipe(c::AbstractCurve, uc::UncertainCurve, draws=4)
-    noise_samples < 0 && throw(ArgumentError("Number of samples must be > 0."))
+@recipe function plot_recipe(c::AbstractCurve, uc::UncertainCurve, draws=3)
+    draws < 0 && throw(ArgumentError("Number of samples must be > 0."))
 
     legend := :none
     layout := @layout grid(draws + 1, 1)
     link := :both
     
-    delete!(plotattributes, :noise_samples)
-    
+    delete!(plotattributes, :draws)
+  
     for i ∈ 0:draws
         @series begin
-            yguide := i == 0 ? "input" : "sample $(i)"
             subplot := i + 1
             if i == 0
-                c.x, c.y
+                seriescolor := :red
+                yguide := "input"
+                c
             else
-                uc.x, get_draw(i, uc)
+                yguide := "sample $(i)"
+                get_draw(i, uc)
             end
         end
     end
 end
+ 
 
-# this seems to conflict with plot_autocov()
-"""function Plots.plot(c::AbstractCurve, nm::AbstractNoiseModel, draws=4; kw...)
-    noise = add_noise(Curve(c.x), zeros(eltype(c), length(c)), nm)
-    return Plots.plot(c, noise, draws; kw...)
-end"""
-    
-
-
-
-# --------------------------------------
-# enable plotting of noise sample draws
-# --------------------------------------
-
-@recipe function plot_recipe(nm::AbstractNoiseModel; grid_points=1000, draws=3)
-    draws < 0 && throw(ArgumentError("Number of samples must be > 0."))
-
-    layout := @layout grid(draws, 1)
-    legend --> :none
-    link := :both
-
-    delete!(plotattributes, :grid_points)
-    delete!(plotattributes, :draws)
-
-    S = generate_noise(nm, grid_points, draws)
-    for i ∈ 1:draws
-        @series begin
-            subplot := i
-            yguide := "sample $(i)"
-            get_draw.(i, S)
-        end
-    end
-end
-
-
-@recipe function plot_recipe(crv::Curve{T}, left, right; subtract_baseline=true) where T
+@recipe function plot_recipe(crv::Curve{T}, left::T, right::T; subtract_baseline=true) where T
     fillrange := 0
     fillalpha --> 0.5
     fillcolor --> :orange
     linewidth --> 0
     label     --> nothing
-
+    
     left = T(left)
     right = T(right)
-
+    
     l, r, xl, xr, yl, yr = get_left_right_points(crv.x, crv.y, left, right)
     if subtract_baseline
         x = [xl; crv.x[l+1:r-1]; xr; xl]
@@ -144,6 +114,136 @@ end
         y = [yl; crv.y[l+1:r-1]; yr; 0;  0 ]
     end
     return x, y
+end
+
+
+@recipe function plot_recipe(crv::Curve{T}, bnds::Vector{UncertainBound{T, N}}, draw::Int; subtract_baseline=true) where {T, N}
+    @series begin
+        crv
+    end
+    for b ∈ bnds
+        @series begin
+            subtract_baseline := subtract_baseline
+            left, right = get_draw(draw, b)
+            crv, left, right
+        end
+    end
+end
+
+
+@recipe function plot_recipe(crv::Curve{T}, bnd::UncertainBound{T, N}, draw::Int; subtract_baseline=true) where {T, N}
+    @series begin
+        crv, [bnd], draw
+    end
+end
+
+
+# plot draws of curves alongside with draws of bounds
+@recipe function plot_recipe(
+    uc::UncertainCurve{T, N},
+    bnds::Vector{UncertainBound{T, N}}
+    ;
+    draws=3,
+    subtract_baseline=true
+) where {T, N}
+
+    legend := :none
+    layout := @layout grid(draws + 1, 1)
+    link := :both
+    
+    mean_uc = mean(uc)
+    
+    for i ∈ 0:draws
+        for b in bnds
+            @series begin
+                subplot := i + 1
+                subtract_baseline := subtract_baseline
+                if i == 0
+                    mean_uc, mean(b)...
+                else
+                    get_draw(i, uc), get_draw(i, b)...
+                end
+            end
+        end
+        @series begin
+            subplot := i + 1
+            if i == 0
+                # mean spectrum
+                seriescolor := :red
+                yguide := "mean"
+                mean_uc
+            else
+                seriescolor := DEFAULT_COLOR
+                yguide := "sample $(i)"
+                get_draw(i, uc)
+            end
+        end
+    end
+end
+
+
+@recipe function plot_recipe(
+    uc::UncertainCurve{T, N},
+    bnd::UncertainBound{T, N}
+    ;
+    draws=3,
+    subtract_baseline=true
+) where {T, N}
+    draws := draws
+    subtract_baseline := subtract_baseline
+    uc, [bnd]
+end
+
+
+
+# --------------------------------------
+# enable plotting of noise sample draws
+# --------------------------------------
+
+@recipe function plot_recipe(x::Vector{T}, nm::AbstractNoiseModel; draws=3, subplot_offset=0) where {T <: Real}
+    draws < 0 && throw(ArgumentError("Number of samples must be > 0."))
+
+    layout --> @layout grid(draws, 1)
+    legend --> :none
+    link --> :both
+
+    delete!(plotattributes, :grid_points)
+    delete!(plotattributes, :draws)
+
+    S = generate_noise(nm, length(x), draws)
+    for i ∈ 1:draws
+        @series begin
+            subplot := i + subplot_offset # the offset does only apply if plotting together with a noise sample
+            yguide := "sample $(i)"
+            x, get_draw.(i, S)
+        end
+    end
+end
+@recipe function plot_recipe(nm::AbstractNoiseModel; gridpoints=1000, draws=3)
+    @series begin
+        x = collect(eltype(nm), 1:gridpoints)
+        x, nm
+    end
+end
+
+
+@recipe function plot_recipe(ns::NoiseSample, nm::AbstractNoiseModel; draws=3)
+    
+    layout --> @layout grid(draws+1, 1)
+    legend --> :none
+    link --> :both
+
+    @series begin
+            subplot := 1
+            yguide := "input"
+            seriescolor --> :red
+            ns 
+    end
+    @series begin
+            subplot_offset := 1
+            draws := draws
+            ns.x, nm
+    end
 end
 
 

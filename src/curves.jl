@@ -86,7 +86,10 @@ UncertainCurve(y::Vector{Particles{T, N}}) where {T, N} = UncertainCurve(collect
 
 
 get_draw(n, p::Particles) = p.particles[n]
-get_draw(n, uc::UncertainCurve) = [get_draw(n, yᵢ) for yᵢ in uc.y]
+get_draw(n, uc::UncertainCurve) = Curve(uc.x, get_draw.(n, uc.y))
+
+
+Statistics.mean(uc::UncertainCurve) = Curve(uc.x, Statistics.mean(uc.y))
 
 
 """

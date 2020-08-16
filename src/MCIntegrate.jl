@@ -12,6 +12,9 @@ using Random
 using RecipesBase:          @recipe
 using StatsBase:            autocov
 
+import Statistics
+
+
 include("common.jl")
 include("curves.jl")
 include("bounds.jl")

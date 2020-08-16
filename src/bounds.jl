@@ -35,7 +35,7 @@ function UncertainBound(
         for j ∈ 1:N
             cⱼ = get_draw(j, uc) # sample j from curve
             wⱼ = get_draw(j, width) # sample j from width
-            left[i, j], right[i, j] = left_right_from_peak(uc.x, cⱼ, pᵢ, wⱼ)
+            left[i, j], right[i, j] = left_right_from_peak(uc.x, cⱼ.y, pᵢ, wⱼ)
         end
     end
     
@@ -55,6 +55,11 @@ function UncertainBound(
 end
 
 
+get_draw(n, bnd::UncertainBound) = [get_draw(n, bnd.left), get_draw(n, bnd.right)]
+
+
+Statistics.mean(bnd::UncertainBound) = [Statistics.mean(bnd.left), Statistics.mean(bnd.right)]
+
 """
     scale_shift_beta(α, β, a, b)
 
@@ -64,5 +69,3 @@ Samples fall in the interval [`a`, `b`].
 function scale_shift_beta(α, β, a, b)
     return LocationScale(a, b - a, Beta(α, β))
 end
-
-get_draw(n, bnd::UncertainBound) = [get_draw(n, bnd.left), get_draw(n, bnd.right)]

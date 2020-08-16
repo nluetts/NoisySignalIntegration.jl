@@ -1,3 +1,5 @@
+## Run this file manually to check that plottings works as expected
+
 using Revise
 
 ##
@@ -56,4 +58,13 @@ areas = mc_integrate(unc_spec, [ubnd1, ubnd2, ubnd3, ubnd4, ubnd5])
 add_noise(spec, GaussianNoiseModel(1.0)) |> x -> mcplot(x.y, 100, alpha=0.1)
 
 ##
-plot_autocov(noise, nm)
+plot(unc_spec, [ubnd1, ubnd2])
+
+##
+plot(unc_spec, ubnd1)
+
+##
+plot(spec, unc_spec, 4)
+
+##
+plot(noise, nm; draws=2)
