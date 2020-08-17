@@ -1,4 +1,5 @@
-const DEFAULT_COLOR = palette(:default)[1]
+const PRIMARY_COLOR = palette(:default)[1]
+const SECONDARY_COLOR = palette(:default)[2]
 
 
 function get_left_right_points(x::AbstractArray{T}, y::AbstractArray{T}, left::T, right::T; subtract_baseline=true) where {T<:AbstractFloat}
@@ -83,7 +84,7 @@ end
         @series begin
             subplot := i + 1
             if i == 0
-                seriescolor := :red
+                seriescolor := SECONDARY_COLOR
                 yguide := "input"
                 c
             else
@@ -169,11 +170,11 @@ end
             subplot := i + 1
             if i == 0
                 # mean spectrum
-                seriescolor := :red
+                seriescolor := SECONDARY_COLOR
                 yguide := "mean"
                 mean_uc
             else
-                seriescolor := DEFAULT_COLOR
+                seriescolor := PRIMARY_COLOR
                 yguide := "sample $(i)"
                 get_draw(i, uc)
             end
@@ -236,7 +237,7 @@ end
     @series begin
             subplot := 1
             yguide := "input"
-            seriescolor --> :red
+            seriescolor --> SECONDARY_COLOR
             ns 
     end
     @series begin
@@ -255,18 +256,18 @@ struct _AutoCovPlot end # just for dispatch
 @recipe function plot_repice(ns::NoiseSample, nm::MvGaussianNoiseModel, ::Type{_AutoCovPlot})
     xguide := "lag"
     yguide := "auto-covariance"
-
+    
     lags, acov = estimate_autocov(ns)
-
+    
     @series begin
         label := "estimate"
-        seriescolor --> :blue
+        seriescolor --> PRIMARY_COLOR
         lags, acov
     end
-
+    
     @series begin
         label := @sprintf "fit (α = %.3e, λ = %.3e)" nm.α nm.λ
-        seriescolor --> :red
+        seriescolor --> SECONDARY_COLOR
         lags, gauss_kernel(lags, [nm.α, nm.λ])
     end
 end
@@ -275,3 +276,10 @@ plot_autocov(ns::NoiseSample, nm::MvGaussianNoiseModel; kw...) = plot(ns, nm, _A
 
 
 MonteCarloMeasurements.mcplot(uc::UncertainCurve; draws=10, alpha=0.5, kw...) = MonteCarloMeasurements.mcplot(uc.x, uc.y, draws; alpha=0.5, kw...)
+
+
+# --------------------------------------------
+# enable plotting of UncertainCurve histograms
+# --------------------------------------------
+
+@recipe plot_repice(::Type{T}, ub::T) where {T <: UncertainBound} = [ub.left.particles, ub.right.particles]
