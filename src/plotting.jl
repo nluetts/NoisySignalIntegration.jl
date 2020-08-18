@@ -1,84 +1,11 @@
-# --------------------------------------------
-# enable plotting of custom types via recipes
-# --------------------------------------------
+const PRIMARY_COLOR = palette(:default)[1]
+const SECONDARY_COLOR = palette(:default)[2]
 
-
-# --------------------------------------------
-# enable plotting of curves and noise samples
-# --------------------------------------------
-@recipe function plot_recipe(crv::AbstractCurve)
-    xguide --> "x"
-    yguide --> "y"
-    return crv.x, crv.y
-end
-
-
-# --------------------------------------
-# enable plotting of noise sample draws
-# --------------------------------------
-
-@recipe function plot_recipe(nm::AbstractNoiseModel; grid_points=1000, noise_samples=3)
-    legend --> :outertopright
-    noise_samples < 0 && throw(ArgumentError("Number of samples must be > 0."))
-    S = sample(nm, grid_points, noise_samples)
-    delete!(plotattributes, :grid_points)
-    delete!(plotattributes, :noise_samples)
-    span = (maximum(S) - minimum(S)) * 1.1
-    for (i, s) in enumerate(eachcol(S))
-        @series begin
-            label := "sample $(i)"
-            s .+ (i*span - 1)
-        end
-    end
-end
-
-@recipe function plot_recipe(ns::Noise, nm::AbstractNoiseModel; noise_samples=3)
-    noise_samples < 0 && throw(ArgumentError("Number of samples must be > 0."))
-    S = sample(nm, length(ns), noise_samples)
-    span = (maximum(S) - minimum(S)) * 1.1
-    for (i, s) in enumerate(eachcol(S))
-        @series begin
-            label := "sample $(i)"
-            ns.x, s .+ i*span
-        end
-    end
-    seriescolor --> :black
-    label := "experimental"
-    ns.x, ns.y
-end
-
-# -----------------------------------
-# enable plotting of auto covariance
-# -----------------------------------
-struct AutoCovPlot end # just for dispatch
-
-@recipe function plot_repice(ns::Noise, nm::MvGaussianNoiseModel, ::Type{AutoCovPlot})
-    xguide := "lag"
-    yguide := "auto-covariance"
-
-    lags, acov = estimate_autocov(ns)
-
-    @series begin
-        label := "estimate"
-        seriescolor --> :blue
-        lags, acov
-    end
-
-    @series begin
-        label := @sprintf "fit (α = %.3e, λ = %.3e)" nm.α nm.λ
-        seriescolor --> :red
-        lags, gauss_kernel(lags, [nm.α, nm.λ])
-    end
-end
-
-plot_autocov(ns::Noise, nm::MvGaussianNoiseModel; kw...) = plot(ns, nm, AutoCovPlot; kw...)
-
-# --------------------------------------
-# enable plotting of integration bounds
-# --------------------------------------
 
 function get_left_right_points(x::AbstractArray{T}, y::AbstractArray{T}, left::T, right::T; subtract_baseline=true) where {T<:AbstractFloat}
-    
+
+    # this function is required to plot integration areas
+
     left, right = left < right ? (left, right) : (right, left)
 
     N = length(x)
@@ -104,6 +31,10 @@ function get_left_right_points(x::AbstractArray{T}, y::AbstractArray{T}, left::T
                 xl = left
                 yl = lininterp(left, x₀, x₁, y₀, y₁)
                 l = j - 1
+            elseif x₀ == left
+                xl = left
+                yl = y₀
+                l = j
             else
                 # this case means that `left` <= x[1]
                 xl = x₀
@@ -131,16 +62,52 @@ function get_left_right_points(x::AbstractArray{T}, y::AbstractArray{T}, left::T
     return l, r, xl, xr, yl, yr
 end
 
+@recipe function plot_recipe(crv::AbstractCurve)
+    return crv.x, crv.y
+end
 
-@recipe function plot_recipe(crv::Curve, left::Float64, right::Float64, blp::BaselinePolicy)
+
+# --------------------------------------
+# enable plotting of sample draws
+# --------------------------------------
+
+@recipe function plot_recipe(c::AbstractCurve, uc::UncertainCurve, draws=3)
+    draws < 0 && throw(ArgumentError("Number of samples must be > 0."))
+
+    legend := :none
+    layout := @layout grid(draws + 1, 1)
+    link := :both
+    
+    delete!(plotattributes, :draws)
+  
+    for i ∈ 0:draws
+        @series begin
+            subplot := i + 1
+            if i == 0
+                seriescolor := SECONDARY_COLOR
+                yguide := "input"
+                c
+            else
+                yguide := "sample $(i)"
+                get_draw(i, uc)
+            end
+        end
+    end
+end
+ 
+
+@recipe function plot_recipe(crv::Curve{T}, left::T, right::T; subtract_baseline=true) where T
     fillrange := 0
     fillalpha --> 0.5
     fillcolor --> :orange
     linewidth --> 0
     label     --> nothing
-
+    
+    left = T(left)
+    right = T(right)
+    
     l, r, xl, xr, yl, yr = get_left_right_points(crv.x, crv.y, left, right)
-    if blp == SUBTRACT_LOCAL
+    if subtract_baseline
         x = [xl; crv.x[l+1:r-1]; xr; xl]
         y = [yl; crv.y[l+1:r-1]; yr; yl]
     else
@@ -150,68 +117,169 @@ end
     return x, y
 end
 
-@recipe function plot_recipe(crv::Curve, bnds::Vector{T}) where {T <: AbstractUncertainBound}
-    for b in bnds
-        @series begin
-            l, r = typeof(b) <: WidthBoundUnion ? sample(b, crv) : sample(b)
-            crv, l, r
-        end
-    end
-    return crv
-end
 
-@recipe function plot_recipe(crv::Curve, bnds::Vector{T}, nm::AbstractNoiseModel; samples=3) where {T <: AbstractUncertainBound}
-    
-    legend --> :best
-    background_color_legend --> nothing
-    foreground_color_legend --> nothing
-    layout := @layout grid(samples+1, 1)
-    link := :both
-
-    _, y_min = minimum(crv)
-    _, y_max = maximum(crv)
-
-    # plot experimental spectrum with mean bounds
+@recipe function plot_recipe(crv::Curve{T}, bnds::Vector{UncertainBound{T, N}}, draw::Int; subtract_baseline=true) where {T, N}
     @series begin
-        label := "original data, mean bounds"
-        showaxis := :y
-        subplot := 1
         crv
     end
-    for (i, b) in enumerate(bnds)
+    for b ∈ bnds
         @series begin
-            subplot := 1
-            if typeof(b) <: WidthBound
-                l, r, = left_right_from_peak(crv.x, crv.y, b.loc, mean(b.width))
-            elseif typeof(b) == WidthBoundClone
-                :fillcolor --> :red
-                l, r, = left_right_from_peak(crv.x, crv.y, b.loc, mean(b.reference.width))
-            else
-                l, r = map(mean, [b.left, b.right])
-            end
-            crv, l, r, get_baseline_policy(b)
+            subtract_baseline := subtract_baseline
+            left, right = get_draw(draw, b)
+            crv, left, right
         end
     end
+end
 
-    # plot samples
-    for i in 1:samples
-        crv_ = crv + (sample(nm, length(crv)))
-        @series begin
-            label := "sample $i"
-            subplot := i + 1
-            crv_
-        end
+
+@recipe function plot_recipe(crv::Curve{T}, bnd::UncertainBound{T, N}, draw::Int; subtract_baseline=true) where {T, N}
+    @series begin
+        crv, [bnd], draw
+    end
+end
+
+
+# plot draws of curves alongside with draws of bounds
+@recipe function plot_recipe(
+    uc::UncertainCurve{T, N},
+    bnds::Vector{UncertainBound{T, N}}
+    ;
+    draws=3,
+    subtract_baseline=true
+) where {T, N}
+
+    legend := :none
+    layout := @layout grid(draws + 1, 1)
+    link := :both
     
+    mean_uc = mean(uc)
+    
+    for i ∈ 0:draws
         for b in bnds
             @series begin
-                label := nothing
                 subplot := i + 1
-                if typeof(b) == WidthBoundClone
-                    :fillcolor --> :red
+                subtract_baseline := subtract_baseline
+                if i == 0
+                    mean_uc, mean(b)...
+                else
+                    get_draw(i, uc), get_draw(i, b)...
                 end
-                l, r = typeof(b) <: WidthBoundUnion ? sample(b, crv_) : sample(b)
-                crv_, l, r, get_baseline_policy(b)
+            end
+        end
+        @series begin
+            subplot := i + 1
+            if i == 0
+                # mean spectrum
+                seriescolor := SECONDARY_COLOR
+                yguide := "mean"
+                mean_uc
+            else
+                seriescolor := PRIMARY_COLOR
+                yguide := "sample $(i)"
+                get_draw(i, uc)
             end
         end
     end
 end
+
+
+@recipe function plot_recipe(
+    uc::UncertainCurve{T, N},
+    bnd::UncertainBound{T, N}
+    ;
+    draws=3,
+    subtract_baseline=true
+) where {T, N}
+    draws := draws
+    subtract_baseline := subtract_baseline
+    uc, [bnd]
+end
+
+
+
+# --------------------------------------
+# enable plotting of noise sample draws
+# --------------------------------------
+
+@recipe function plot_recipe(x::Vector{T}, nm::AbstractNoiseModel; draws=3, subplot_offset=0) where {T <: Real}
+    draws < 0 && throw(ArgumentError("Number of samples must be > 0."))
+
+    layout --> @layout grid(draws, 1)
+    legend --> :none
+    link --> :both
+
+    delete!(plotattributes, :grid_points)
+    delete!(plotattributes, :draws)
+
+    S = generate_noise(nm, length(x), draws)
+    for i ∈ 1:draws
+        @series begin
+            subplot := i + subplot_offset # the offset does only apply if plotting together with a noise sample
+            yguide := "sample $(i)"
+            x, get_draw.(i, S)
+        end
+    end
+end
+@recipe function plot_recipe(nm::AbstractNoiseModel; gridpoints=1000, draws=3)
+    @series begin
+        x = collect(eltype(nm), 1:gridpoints)
+        x, nm
+    end
+end
+
+
+@recipe function plot_recipe(ns::NoiseSample, nm::AbstractNoiseModel; draws=3)
+    
+    layout --> @layout grid(draws+1, 1)
+    legend --> :none
+    link --> :both
+
+    @series begin
+            subplot := 1
+            yguide := "input"
+            seriescolor --> SECONDARY_COLOR
+            ns 
+    end
+    @series begin
+            subplot_offset := 1
+            draws := draws
+            ns.x, nm
+    end
+end
+
+
+# -----------------------------------
+# enable plotting of auto covariance
+# -----------------------------------
+struct _AutoCovPlot end # just for dispatch
+
+@recipe function plot_repice(ns::NoiseSample, nm::MvGaussianNoiseModel, ::Type{_AutoCovPlot})
+    xguide := "lag"
+    yguide := "auto-covariance"
+    
+    lags, acov = estimate_autocov(ns)
+    
+    @series begin
+        label := "estimate"
+        seriescolor --> PRIMARY_COLOR
+        lags, acov
+    end
+    
+    @series begin
+        label := @sprintf "fit (α = %.3e, λ = %.3e)" nm.α nm.λ
+        seriescolor --> SECONDARY_COLOR
+        lags, gauss_kernel(lags, [nm.α, nm.λ])
+    end
+end
+
+plot_autocov(ns::NoiseSample, nm::MvGaussianNoiseModel; kw...) = plot(ns, nm, _AutoCovPlot; kw...)
+
+
+MonteCarloMeasurements.mcplot(uc::UncertainCurve; draws=10, alpha=0.5, kw...) = MonteCarloMeasurements.mcplot(uc.x, uc.y, draws; alpha=0.5, kw...)
+
+
+# --------------------------------------------
+# enable plotting of UncertainCurve histograms
+# --------------------------------------------
+
+@recipe plot_repice(::Type{T}, ub::T) where {T <: UncertainBound} = [ub.left.particles, ub.right.particles]

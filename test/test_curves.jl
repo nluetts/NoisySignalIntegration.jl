@@ -1,7 +1,10 @@
 using Test
 using MCIntegrate
 
-@testset "AbstractCurve" begin
+@testset "Curve" begin
+
+    curve = Curve([3, 4, 5])
+    @test curve == Curve([1, 2, 3], [3, 4, 5])
 
     curve = Curve([1.0, 2.0], [3.0, 4.0])
 
@@ -23,15 +26,7 @@ using MCIntegrate
     @test 2.0 * curve == Curve([1.0, 2.0], [6.0, 8.0])
     @test 2.0 / curve == Curve([1.0, 2.0], [2.0/3.0, 0.5])
 
-    noise = Noise([1.0, 2.0], [4.0, 4.0])
-    @test length(noise) == 2
-    @test noise[end][1] == 2.0
-    @test noise[end][2] + 1 ≈ 1.0
-    @test [noise; noise] == Noise([1.0, 2.0, 1.0, 2.0], [4.0, 4.0, 4.0, 4.0])
-
     # x and y need to have same length
     @test_throws ArgumentError Curve([1.0], [4.0, 4.0])
-    @test_throws ArgumentError Noise([1.0], [4.0, 4.0])
     @test_throws ArgumentError Curve([1.0, 2.0], [4.0])
-    @test_throws ArgumentError Noise([1.0, 2.0], [4.0])
 end;

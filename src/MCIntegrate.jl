@@ -1,41 +1,43 @@
 module MCIntegrate
 
-using Distributions: ContinuousUnivariateDistribution
-using Distributions: MvNormal, Beta, LocationScale, mean
-using LinearAlgebra: eachcol
-using LsqFit: curve_fit
+using Distributions:        ContinuousUnivariateDistribution
+using Distributions:        MvNormal, Beta, LocationScale, mean
+using LinearAlgebra:        eachcol
+using LsqFit:               curve_fit
+using MonteCarloMeasurements
 using Plots
-using Polynomials: fit
-using Printf: @printf, @sprintf
+using Polynomials:          fit
+using Printf:               @printf, @sprintf
 using Random
-using RecipesBase: @recipe
-using StatsBase: autocov
+using RecipesBase:          @recipe
+using StatsBase:            autocov
+
+import Statistics
+
 
 include("common.jl")
-include("types.jl")
-include("stats.jl")
-include("utils.jl")
+include("curves.jl")
+include("bounds.jl")
+include("noise.jl")
 include("plotting.jl")
-include("mc.jl")
+include("integration.jl")
 
 export
     Curve,
     GaussianNoiseModel,
-    LeftRightBound,
     MvGaussianNoiseModel,
-    Noise,
-    WidthBound,
-    WidthBoundClone,
-    clone,
+    NoiseSample,
+    UncertainCurve,
+    UncertainBound,
+    add_noise,
+    generate_noise,
     crop,
     fit_noise,
     get_cov,
     mc_integrate,
+    plot,
     plot_autocov,
-    sample,
-    sample!,
     scale_shift_beta,
-    SUBTRACT_LOCAL,
-    INCLUDE
+    trapz
 
 end # module

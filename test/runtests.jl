@@ -1,1 +1,6 @@
-include("test_types.jl")
+include("test_common.jl")
+include("test_curves.jl")
+include("test_bounds.jl")
+include("test_noise.jl")
+#include("test_plotting.jl")
+#include("test_integration.jl")
