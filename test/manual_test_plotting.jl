@@ -12,7 +12,7 @@ using Plots
 using Random
 using MonteCarloMeasurements
 
-const SAMPLES = 50_000
+const SAMPLES = 100_000
 
 function get_test_spectrum(seed)
     Random.seed!(seed)

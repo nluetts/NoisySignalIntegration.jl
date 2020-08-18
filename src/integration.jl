@@ -1,4 +1,9 @@
-function mc_integrate(us::UncertainCurve{T, N}, bnds::Vector{UncertainBound{T, M}}) where {T, M, N}
+function mc_integrate(
+    us::UncertainCurve{T, N},
+    bnds::Vector{UncertainBound{T, M}}
+    ;
+    intfun=trapz
+) where {T, M, N}
 
     M != N && error("Samples sizes incompatible")
     
@@ -8,7 +13,7 @@ function mc_integrate(us::UncertainCurve{T, N}, bnds::Vector{UncertainBound{T, M
         cᵢ = get_draw(i, us)
         for (j, b) in enumerate(bnds)
             l, r = get_draw(i, b)
-            areas[i, j] = MCIntegrate.trapz(us.x, cᵢ.y, l, r)
+            areas[i, j] = intfun(us.x, cᵢ.y, l, r)
         end
     end
     return [Particles(areas[:,i]) for i in 1:size(areas)[2]]

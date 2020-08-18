@@ -37,6 +37,7 @@ export
     mc_integrate,
     plot,
     plot_autocov,
-    scale_shift_beta
+    scale_shift_beta,
+    trapz
 
 end # module

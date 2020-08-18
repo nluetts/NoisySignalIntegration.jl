@@ -3,6 +3,9 @@ using MCIntegrate
 
 @testset "Curve" begin
 
+    curve = Curve([3, 4, 5])
+    @test curve == Curve([1, 2, 3], [3, 4, 5])
+
     curve = Curve([1.0, 2.0], [3.0, 4.0])
 
     # test basic operations
