@@ -30,7 +30,6 @@ export
     UncertainCurve,
     UncertainBound,
     add_noise,
-    generate_noise,
     crop,
     fit_noise,
     get_cov,

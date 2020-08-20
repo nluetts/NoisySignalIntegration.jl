@@ -1,7 +1,7 @@
 """
     detrend(x, y, poly_order)
 
-Subtract polynomial from y data.
+Subtract polynomial from `y` data.
 """
 detrend(x, y, poly_order) = y - fit(x, y, poly_order).(x)
 detrend(c::Curve, poly_order) = Curve(c.x, detrend(c.x, c.y, poly_order))
@@ -19,11 +19,18 @@ If provided, a ploynomial of order `n` is subtracted.
 - `y::Vector{Float64}` : y-value
 
 # Constructors
+
     NoiseSample(x::Vector{T}, y::Vector{T})
     NoiseSample(x::Vector{T}, y::Vector{T}, n::Int)
     NoiseSample(s::Curve)
     NoiseSample(s::Curve, n::Int)
 
+# Notes
+
+Noise samples should not have a slow trend on top of the noise,
+otherwise noise parameters cannot be reliably infered.
+Construct `NoiseSample` objects with a high enough order
+`n` so as to remove any slow variations.
 """
 struct NoiseSample{T} <: AbstractCurve
     x::Vector{T}
@@ -56,6 +63,7 @@ Model to describe noise following a univariate Gaussian distribution
 (uncorrelated noise).
 
 # Fields
+
 - `σ::T` : standard deviation
 """
 struct GaussianNoiseModel{T <: Real} <: AbstractNoiseModel
@@ -65,7 +73,7 @@ end
 Base.eltype(::GaussianNoiseModel{T}) where T = T
 
 function Base.show(io::IO, nm::GaussianNoiseModel)
-    println("GaussianNoiseModel(σ = $(nm.σ))")
+    println(io, "GaussianNoiseModel(σ = $(nm.σ))")
 end
 
 """
@@ -84,11 +92,12 @@ struct MvGaussianNoiseModel{T <: Real} <: AbstractNoiseModel
     α::T
     λ::T
 end
+MvGaussianNoiseModel(δx, α, λ) = MvGaussianNoiseModel(promote(δx, α, λ)...)
 
 Base.eltype(::MvGaussianNoiseModel{T}) where T = T
 
 function Base.show(io::IO, nm::MvGaussianNoiseModel)
-    println("MvGaussianNoiseModel(α = $(nm.α), λ = $(nm.λ))")
+    println(io, "MvGaussianNoiseModel(α = $(nm.α), λ = $(nm.λ))")
 end
 
 """
@@ -140,34 +149,24 @@ function estimate_autocov(n::NoiseSample)
     return lags, acov
 end
 
-"""
-    function fit_noise(
-        lags::Vector{Float64},
-        autocov::Vector{Float64};
-        α_guess=1.0,
-        λ_guess=1.0
-    )
-
-Estimates parameters α and λ of the exponentiated quadratic covariance function
-k(Δx) = α² exp(-0.5 (Δx/λ)²) fitted to autocovariance (k) vs. lag (Δx).
-If a `Noise` instance is passes as first argument, its autocovarince is
-estimated and passed to the fitting function.
-
-Note: Change initial guess if fit does not converge to sensible result.
-"""
-function fit_noise(
-    lags::Vector{T},
-    autocov::Vector{T};
-    α_guess=1.0,
-    λ_guess=1.0
-) where {T <: Real}
+function _fit_noise(lags::Vector{T}, autocov::Vector{T}; α_guess=1.0, λ_guess=1.0) where {T <: Real}
     fit = curve_fit(gauss_kernel, lags, autocov, [α_guess, λ_guess])
     return MvGaussianNoiseModel(lags[1], fit.param...)
 end
 
+"""
+    fit_noise(ns::NoiseSample; α_guess=1.0, λ_guess=1.0)
+
+Build a ``MvGaussianNoiseModel` for the `NoiseSample` `ns`.
+
+Estimates parameters `α` and `λ` of the exponentiated quadratic covariance function
+k(Δx) = α² exp(-0.5 (Δx/λ)²) fitted to autocovariance (k) vs. lag (Δx) of the noise sample.
+
+Change initial guess if fit does not converge to sensible result.
+"""
 function fit_noise(n::NoiseSample; α_guess=1.0, λ_guess=1.0)
     lags, acov = estimate_autocov(n)
-    return fit_noise(lags, acov; α_guess=α_guess, λ_guess=λ_guess)
+    return _fit_noise(lags, acov; α_guess=α_guess, λ_guess=λ_guess)
 end
 
 """
