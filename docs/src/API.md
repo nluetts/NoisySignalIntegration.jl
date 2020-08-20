@@ -2,7 +2,7 @@
 
 ```@contents
 Pages = ["API.md"]
-Depth = 3
+Depth = 4
 ```
 
 ## Types

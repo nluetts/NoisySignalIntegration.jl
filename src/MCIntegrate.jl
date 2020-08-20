@@ -34,9 +34,11 @@ export
     fit_noise,
     get_cov,
     mc_integrate,
+    mean,
     plot_autocov,
     plot,
     scale_shift_beta,
+    std,
     trapz
 
 end # module

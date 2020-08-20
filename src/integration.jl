@@ -12,9 +12,12 @@ of uncertain areas of type `Particles{T, N}`.
 `intfun`:
 The core integration function that is used to numerically integrate each draw.
 Defaults to `MCIntegrate.trapz`.
-The function that is used to substitute `trapz` must share its call signature.
+The function that is used to substitute [`trapz`](@ref) must share its call signature.
+
+`subtract_baseline`:
+If true, for each draw a local baseline defined by the integration window start and end point will be subtracted.
 """
-function mc_integrate(uc::UncertainCurve{T, N}, bnds::Vector{UncertainBound{T, M}}; intfun=trapz) where {T, M, N}
+function mc_integrate(uc::UncertainCurve{T, N}, bnds::Vector{UncertainBound{T, M}}; intfun=trapz, subtract_baseline=true) where {T, M, N}
 
     M != N && error("Samples sizes incompatible")
     
@@ -24,7 +27,7 @@ function mc_integrate(uc::UncertainCurve{T, N}, bnds::Vector{UncertainBound{T, M
         cᵢ = get_draw(i, uc)
         for (j, b) in enumerate(bnds)
             l, r = get_draw(i, b)
-            areas[i, j] = intfun(uc.x, cᵢ.y, l, r)
+            areas[i, j] = intfun(uc.x, cᵢ.y, l, r; subtract_baseline=subtract_baseline)
         end
     end
     return [Particles(areas[:,i]) for i in 1:size(areas)[2]]

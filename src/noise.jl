@@ -45,6 +45,13 @@ NoiseSample(x::Vector{T}, y::Vector{T}, n::Int=0) where T = NoiseSample{T}(x, y,
 NoiseSample(y::Vector{T}, n::Int=0) where T = NoiseSample(collect(T, 1:length(y)), y, n)
 NoiseSample(s::Curve, n::Int=0) = NoiseSample(s.x, s.y, n)
 
+"""
+    std(ns::NoiseSample; kw...)
+
+Retrieve the standard deviation of the `NoiseSample` `ns`.
+"""
+Statistics.std(ns::NoiseSample; kw...) = Statistics.std(ns.y; kw...)
+
 # -------------------------------------
 # Noise models
 # -------------------------------------

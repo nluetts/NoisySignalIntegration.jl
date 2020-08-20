@@ -14,6 +14,7 @@ makedocs(
     pages = [
         "Home" => "index.md",
         "Usage Guide" => "guide.md",
+        "Examples" => "examples.md",
         "API reference" => "API.md"
     ],
     highlightsig=true

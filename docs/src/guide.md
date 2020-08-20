@@ -1,5 +1,5 @@
 
-# Usage guide
+# Usage Guide
 
 As an usage example, we will go through the analysis of a simulated FTIR spectrum.
 
