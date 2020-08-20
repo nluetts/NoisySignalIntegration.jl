@@ -56,12 +56,14 @@ end;
 
 @testset "GaussianNoiseModel" begin
     @test eltype(GaussianNoiseModel(1)) == Int
+    @test eltype(GaussianNoiseModel(1.)) == Float64
     @test_throws MethodError GaussianNoiseModel(1 + 1im)
 end
 
 
 @testset "MvGaussianNoiseModel" begin
     @test eltype(MvGaussianNoiseModel(1, 1, 1)) == Int
+    @test eltype(MvGaussianNoiseModel(1., 1., 1.)) == Float64
     @test_throws MethodError MvGaussianNoiseModel(1 + 1im, 1, 1)
 end
 

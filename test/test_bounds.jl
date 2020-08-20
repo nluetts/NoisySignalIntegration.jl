@@ -83,6 +83,17 @@ end
 end
 
 
+@testset "UncertainBound creation throws error when distribution has invalid support region" begin
+    seed!(1)
+    uc = begin # create uncertain curve with one symmetric peak
+        x = 0:0.1:10;
+        y = @. exp(-(x - 5)^2)
+        add_noise(Curve(x, y), GaussianNoiseModel(0.03))
+    end;
+    @test_throws ArgumentError UncertainBound(5.0, Normal(0, 1), uc)
+end
+
+
 @testset "scale_shift_beta()" begin
     seed!(1)
     β = scale_shift_beta(2, 2, 1, 2)

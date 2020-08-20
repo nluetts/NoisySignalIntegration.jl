@@ -53,51 +53,78 @@ Datatype holding x-y data.
 x and y vectors have to have the same length.
 
 # Fields
-- `x::Vector{T}` : x-grid
-- `y::Vector{T}` : y-values
+- `x :: Vector{T}` : x-grid
+- `y :: Vector{T}` : y-values
+
 
 # Constructors
 
-    Curve(x::Vector{T}, y::Vector{T})
-    Curve(y::Vector{T})
+    Curve(x, y)
+    Curve(y)
+
+# Note
+
+Both `x` and `y` must be convertabile to vectors with the same element type.
+The element type of `y` determines the element type of the generated `Curve` object.
 
 # Examples
 
 ```jldoctest
-julia> curve = Curve([2.0, 3.0], [4.0, 5.0])
+julia> Curve([2.0, 3.0], [4.0, 5.0])
 Curve{Float64}, 2 datapoints
 (2.0, 4.0)
 (3.0, 5.0)
 
 
-julia> curve = Curve([2.0, 3.0], [5.0])
+julia> Curve([2.0, 3.0], [5.0])
 ERROR: ArgumentError: x and y need to have the same length.
 [...]
 
 
-julia> curve = Curve([4, 5, 6])
+julia> Curve([4, 5, 6])
 Curve{Int64}, 3 datapoints
 (1, 4)
 (2, 5)
 (3, 6)
+
+
+julia> Curve(1:3, [1., 2., 3.])
+Curve{Float64}, 3 datapoints
+(1.0, 1.0)
+(2.0, 2.0)
+(3.0, 3.0)
 ```
 """
 struct Curve{T} <: AbstractCurve
     x::Vector{T}
     y::Vector{T}
-    function Curve{T}(x::Vector{T}, y::Vector{T}) where {T}
+    function Curve{T}(x, y) where {T <: Number}
         verify_same_length(x, y)
         return new{T}(x, y)
     end
 end
+
+function Curve(y)
+    T = eltype(y)
+    return Curve{T}(collect(T, 1:length(y)), y)
+end
+
 Curve(x::Vector{T}, y::Vector{T}) where T = Curve{T}(x, y)
-Curve(y::Vector{T}) where T = Curve(collect(T, 1:length(y)), y)
+
+function Curve(x, y)
+    verify_same_length(x, y)
+    xypairs = promote.(x, y)
+    x = map(first, xypairs)
+    y = map(last, xypairs)
+    T = eltype(y)
+    Curve{T}(x, y)
+end
 
 """
     UncertainCurve{T} <: AbstractCurve
 
 Datatype holding x-y data where y-data holds a vector of particles to model uncertainty.
-x and y vectors have to have the same length.
+`x` and `y` vectors have to have the same length.
 
 # Fields
 - `x::Vector{T}` : x-grid
@@ -114,18 +141,18 @@ x and y vectors have to have the same length.
 julia> using MonteCarloMeasurements
 
 
-julia> uc = UncertainCurve([2.0, 3.0], [4.0 ± 1.0 , 5.0 ± 1.0])
+julia> UncertainCurve([2.0, 3.0], [4.0 ± 1.0 , 5.0 ± 1.0])
 UncertainCurve{Float64,2000}, 2 datapoints
 (2.0, 4.0 ± 1.0)
 (3.0, 5.0 ± 1.0)
 
 
-julia> uc = UncertainCurve([2.0], [4.0 ± 1.0 , 5.0 ± 1.0])
+julia> UncertainCurve([2.0], [4.0 ± 1.0 , 5.0 ± 1.0])
 ERROR: ArgumentError: x and y need to have the same length.
 [...]
 
 
-julia> uc = UncertainCurve([3.0 ± 1.0, 4.0 ± 1.0 , 5.0 ± 1.0])
+julia> UncertainCurve([3.0 ± 1.0, 4.0 ± 1.0 , 5.0 ± 1.0])
 UncertainCurve{Float64,2000}, 3 datapoints
 (1.0, 3.0 ± 1.0)
 (2.0, 4.0 ± 1.0)
@@ -143,8 +170,13 @@ end
 UncertainCurve(x::Vector{T}, y::Vector{Particles{T, N}}) where {T, N} = UncertainCurve{T, N}(x, y)
 UncertainCurve(y::Vector{Particles{T, N}}) where {T, N} = UncertainCurve(collect(T, 1:length(y)), y)
 
+"""
+    get_draw(n, p::Particles)
 
+Retrieve the `n`th particle of the particles stored in `p`.
+"""
 get_draw(n, p::Particles) = p.particles[n]
+
 
 """
     get_draw(n, uc::UncertainCurve)
@@ -153,7 +185,11 @@ Retrieve the `n`th sample of the samples stored in `UncertainCurve` `uc`.
 """
 get_draw(n, uc::UncertainCurve) = Curve(uc.x, get_draw.(n, uc.y))
 
+"""
+    mean(uc::UncertainCurve)
 
+Retrieve the mean of the `UncertainCurve` `uc`.
+"""
 Statistics.mean(uc::UncertainCurve) = Curve(uc.x, Statistics.mean(uc.y))
 
 
@@ -166,12 +202,42 @@ Crop a slice from a curve and return a new curve.
 
 # Examples
 
+```jldoctest
+julia> c = Curve(1:0.5:10, 11:0.5:20);
 
+julia> crop(c, 2, 3)
+Curve{Float64}, 3 datapoints
+(2.0, 12.0)
+(2.5, 12.5)
+(3.0, 13.0)
+
+
+julia> crop(c, 2.1, 3.5)
+Curve{Float64}, 3 datapoints
+(2.5, 12.5)
+(3.0, 13.0)
+(3.5, 13.5)
+
+
+julia> crop(c, 2.1, 3.9)
+Curve{Float64}, 3 datapoints
+(2.5, 12.5)
+(3.0, 13.0)
+(3.5, 13.5)
+
+
+julia> crop(c, 2.1, 4.0)
+Curve{Float64}, 4 datapoints
+(2.5, 12.5)
+(3.0, 13.0)
+(3.5, 13.5)
+(4.0, 14.0)
+```
 """
 function crop(s::AbstractCurve, left, right)
     T = eltype(s.x)
     S = typeof(s)
-    i = searchsortedlast(s.x, T(left))
-    j = searchsortedfirst(s.x, T(right))
+    i = searchsorted(s.x, T(left))  |> first
+    j = searchsorted(s.x, T(right)) |> last
     return S(s.x[i:j], s.y[i:j])
 end
