@@ -27,15 +27,15 @@ export
     GaussianNoiseModel,
     MvGaussianNoiseModel,
     NoiseSample,
-    UncertainCurve,
     UncertainBound,
+    UncertainCurve,
     add_noise,
     crop,
     fit_noise,
     get_cov,
     mc_integrate,
-    plot,
     plot_autocov,
+    plot,
     scale_shift_beta,
     trapz
 

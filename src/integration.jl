@@ -6,8 +6,14 @@ Integrate uncertain curve using uncertain bound(s).
 
 Applies Monte-Carlo integration algorithm to samples stored in `uc` and returns one or an array
 of uncertain areas of type `Particles{T, N}`.
-"""
 
+# Keyword arguments
+
+`intfun`:
+The core integration function that is used to numerically integrate each draw.
+Defaults to `MCIntegrate.trapz`.
+The function that is used to substitute `trapz` must share its call signature.
+"""
 function mc_integrate(uc::UncertainCurve{T, N}, bnds::Vector{UncertainBound{T, M}}; intfun=trapz) where {T, M, N}
 
     M != N && error("Samples sizes incompatible")

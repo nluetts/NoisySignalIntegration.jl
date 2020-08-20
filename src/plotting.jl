@@ -272,6 +272,12 @@ struct _AutoCovPlot end # just for dispatch
     end
 end
 
+
+"""
+    plot_autocov(ns::NoiseSample, nm::MvGaussianNoiseModel; kw...)
+
+Plot results of autocovariance fit.
+"""
 plot_autocov(ns::NoiseSample, nm::MvGaussianNoiseModel; kw...) = plot(ns, nm, _AutoCovPlot; kw...)
 
 

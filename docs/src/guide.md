@@ -1,9 +1,9 @@
 
 # Usage guide
 
-As an usage example, we will go through the analysis of FTIR and Raman band signals.
+As an usage example, we will go through the analysis of a simulated FTIR spectrum.
 
-Suppose we measured an FTIR spectrum that looks like the following simulation:
+Suppose our spectrum looks like the following simulation:
 
 ```@example FTIR
 using Distributions: MvNormal
@@ -269,7 +269,7 @@ histogram([area_1.particles, area_2.particles]; label=["band area 1" "band area 
 
 ```@example FTIR
 ratio = area_1 / area_2
-histogram(ratio.particles; label="band area ratio (1/2)")
+histogram(ratio.particles; label="band area ratio (band 1/band 2)")
 ```
 
 We see that the histogram of peak area ratio peaks around 0.5, which is what we put into the simulation of the spectrum.

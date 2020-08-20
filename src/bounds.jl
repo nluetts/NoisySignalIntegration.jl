@@ -16,7 +16,7 @@ Holds `N` samples of start and end points of type `T` for numeric integration.
 
     UncertainBound(left::S, right::T, N::Int=10_000) where {S <: ContinuousUnivariateDistribution, T <: ContinuousUnivariateDistribution}
 
-Create an `UncertainBound` from two distributions `left` and `right` defining uncertain start and end points of the integration.
+Create an `UncertainBound` from two distributions `left` and `right` defining uncertain start and end points of the integration window.
 
 **Example**
 
@@ -24,6 +24,8 @@ Start point falls in the range [1, 2] with uniform probability, end point falls 
 
 ```jldoctest UBexample
 julia> using Distributions
+
+julia> using Random: seed!; seed!(1);
 
 julia> UncertainBound(Uniform(1, 2), Uniform(5, 6), 20_000)
 UncertainBound{Float64,20000}(1.5 ± 0.29, 5.5 ± 0.29)
@@ -51,7 +53,7 @@ julia> uc = begin # create uncertain curve with one symmetric peak
        end;
 
 julia> ub = UncertainBound(5., scale_shift_beta(2, 2, 3.5, 4.0), uc)
-UncertainBound{Float64,10000}(3.13 ± 0.064, 6.88 ± 0.064)
+UncertainBound{Float64,10000}(3.12 ± 0.063, 6.87 ± 0.064)
 ```
 
 ---

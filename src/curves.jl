@@ -65,7 +65,6 @@ x and y vectors have to have the same length.
 # Note
 
 Both `x` and `y` must be convertabile to vectors with the same element type.
-The element type of `y` determines the element type of the generated `Curve` object.
 
 # Examples
 
@@ -198,12 +197,25 @@ Statistics.mean(uc::UncertainCurve) = Curve(uc.x, Statistics.mean(uc.y))
 """
     crop(s::AbstractCurve, left, right)
 
-Crop a slice from a curve and return a new curve.
+Crop a slice from a curve between `left` and `right` and return a new curve.
 
 # Examples
 
 ```jldoctest
-julia> c = Curve(1:0.5:10, 11:0.5:20);
+julia> c = Curve(1:0.5:10, 11:0.5:20)
+Curve{Float64}, 19 datapoints
+(1.0, 11.0)
+(1.5, 11.5)
+(2.0, 12.0)
+(2.5, 12.5)
+(3.0, 13.0)
+    ⋮
+(8.0, 18.0)
+(8.5, 18.5)
+(9.0, 19.0)
+(9.5, 19.5)
+(10.0, 20.0)
+
 
 julia> crop(c, 2, 3)
 Curve{Float64}, 3 datapoints

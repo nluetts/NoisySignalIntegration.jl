@@ -157,10 +157,13 @@ end
 """
     fit_noise(ns::NoiseSample; α_guess=1.0, λ_guess=1.0)
 
-Build a ``MvGaussianNoiseModel` for the `NoiseSample` `ns`.
+Build a `MvGaussianNoiseModel` for the `NoiseSample` `ns`.
 
-Estimates parameters `α` and `λ` of the exponentiated quadratic covariance function
-k(Δx) = α² exp(-0.5 (Δx/λ)²) fitted to autocovariance (k) vs. lag (Δx) of the noise sample.
+Estimates parameters `α` and `λ` by fitting the exponentiated quadratic covariance function
+
+    k(Δx) = α² exp(-0.5 (Δx/λ)²)
+    
+to the autocovariance (k) vs. the lag (Δx) of the noise sample.
 
 Change initial guess if fit does not converge to sensible result.
 """
@@ -191,15 +194,17 @@ end
 
 
 """
-Add noise from noise model to curve, retrieve UncertainCurve
+    add_noise(c::Curve, nm::AbstractNoiseModel, N::Int=10_000)
+
+Add noise from noise model to curve, retrieve UncertainCurve with `N` samples.
 """
-function add_noise(c::Curve, nm::GaussianNoiseModel, samples::Int=10_000)
-    return UncertainCurve(c.x, Particles(samples, MvNormal(c.y, nm.σ)))
+function add_noise(c::Curve, nm::GaussianNoiseModel, N::Int=10_000)
+    return UncertainCurve(c.x, Particles(N, MvNormal(c.y, nm.σ)))
 end
-function add_noise(c::Curve, nm::MvGaussianNoiseModel, samples::Int=10_000)
+function add_noise(c::Curve, nm::MvGaussianNoiseModel, N::Int=10_000)
     δx = c.x[2] - c.x[1]
     Σ = get_cov(nm, length(c))
-    return UncertainCurve(c.x, Particles(samples, MvNormal(c.y, Σ)))
+    return UncertainCurve(c.x, Particles(N, MvNormal(c.y, Σ)))
 end
 
 

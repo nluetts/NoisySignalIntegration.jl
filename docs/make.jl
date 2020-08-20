@@ -1,8 +1,9 @@
-using Documenter
-using MCIntegrate
 using Pkg
 
-Pkg.activate(".") # activate the docs environment
+Pkg.activate(@__DIR__) # activate the docs environment
+
+using Documenter
+using MCIntegrate
 
 # include doctests from docstrings
 DocMeta.setdocmeta!(MCIntegrate, :DocTestSetup, :(using MCIntegrate); recursive=true)
@@ -13,7 +14,7 @@ makedocs(
     pages = [
         "Home" => "index.md",
         "Usage Guide" => "guide.md",
-        "API reference" => "api_ref.md"
+        "API reference" => "API.md"
     ],
     highlightsig=true
 )
