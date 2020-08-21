@@ -7,26 +7,25 @@ Suppose our spectrum looks like the following simulation:
 
 ```@example FTIR
 using Distributions: MvNormal
-using Plots: plot, plot!
+using Plots
 using Random: seed!
 
 using MCIntegrate
 
 seed!(42)
 
-x = collect(0:0.1:100)
+gausspeaks(x, p) = sum([@. A * 1/√(2π * σ^2) * exp(-(x - μ)^2 / (2σ^2)) for (A, μ, σ) in p])
 
-# simulate FTIR spectrum with two bands
-# the true intensity ratio is 1 : 2
-bands = @. exp(-(x-15)^2) + 2 * exp(-(x-30)^2)
-baseline = @. 1.0 + x*1.5e-2 - (x-50)^3*3e-6
-noise = begin
-    n = length(x)
-    δx = x[2] - x[1] 
-    get_cov(δx, n, 0.1, 0.5) |> MvNormal |> rand
+spectrum = let
+    x = collect(0:0.1:100)
+
+    # simulate FTIR spectrum with two bands
+    # the true intensity ratio is 1 : 2
+    bands = gausspeaks(x, [(1, 15, √0.5), (2, 30, √0.5)])
+    baseline = @. 1.0 + x*1.5e-2 - (x-50)^3*3e-6
+    uc = add_noise(Curve(x, baseline + bands), MvGaussianNoiseModel(0.1, 0.05, 0.5), 1)
+    MCIntegrate.get_draw(1, uc)
 end
-
-spectrum = Curve(x, baseline + bands + noise)
 
 plot(spectrum, label="simulated spectrum")
 ```
@@ -69,10 +68,10 @@ plot!(noise, label="NoiseSample object")
 In order to simulate the noise, we must determine its characteristics.
 A model is retrieved by fitting the estimated autocovariance:
 
-```@example FTIR
-nm = fit_noise(noise)
+```@example FTIRnm = fit_noise(noise)
 # plot the fitting result:
-plot_autocov(noise, nm)
+plot_autocov(noise, nm);
+lens!([0, 1.5], [-1e-3, 3e-3], inset = (1, bbox(0.3, 0.3, 0.3, 0.3)))
 ```
 
 Plotting the model next to the noise object is an important sanity check to verify that the fitting yielded a sensible estimate and that generated noise samples do mimic the experimental noise. They keyword `draws` controls how many random generated noise draws are plotted.
@@ -140,8 +139,6 @@ Upon creation of the `UncertainBound` object, pseudo random samples of the integ
 We can plot the bound as a histogram to see the distribution of the start and end point:
 
 ```@example FTIR
-using Plots: histogram, histogram!
-
 histogram(lrb; label=["start" "end"])
 ```
 
@@ -193,7 +190,7 @@ From the provided data, the `UncertainBound` object is created as follows:
 Therefore, what is stored in the `UncertainBound` object are again start and end points for the integration. We can verify this by plotting another histogram:
 
 ```@example FTIR
-histogram(wb; label=["start" "end"], normalize=true)
+histogram(wb; label=["start" "end"], normalize=true, linewidth=0)
 ```
 
 The crucial difference compared to the bound defined from two distributions is that the start and end points are now placed symmetrically with respect to the band's peak position. The `UncertainBound` now "follows" the peak, so to speak.

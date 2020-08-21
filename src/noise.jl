@@ -99,7 +99,6 @@ struct MvGaussianNoiseModel{T <: Real} <: AbstractNoiseModel
     α::T
     λ::T
 end
-MvGaussianNoiseModel(δx, α, λ) = MvGaussianNoiseModel(promote(δx, α, λ)...)
 
 Base.eltype(::MvGaussianNoiseModel{T}) where T = T
 

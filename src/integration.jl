@@ -33,4 +33,6 @@ function mc_integrate(uc::UncertainCurve{T, N}, bnds::Vector{UncertainBound{T, M
     return [Particles(areas[:,i]) for i in 1:size(areas)[2]]
 end
 
-mc_integrate(uc::S, bnd::T; intfun=trapz) where {S <: UncertainCurve, T <: UncertainBound} = mc_integrate(uc, [bnd]; intfun=intfun)[1]
+function mc_integrate(uc::S, bnd::T; intfun=trapz, subtract_baseline=true) where {S <: UncertainCurve, T <: UncertainBound}
+    return mc_integrate(uc, [bnd]; intfun=intfun, subtract_baseline=subtract_baseline)[1]
+end
