@@ -156,8 +156,10 @@ function estimate_autocov(n::NoiseSample)
 end
 
 function _fit_noise(lags::Vector{T}, autocov::Vector{T}; α_guess=1.0, λ_guess=1.0) where {T <: Real}
-    fit = curve_fit(gauss_kernel, lags, autocov, [α_guess, λ_guess])
-    return MvGaussianNoiseModel(lags[1], fit.param...)
+    ma = maximum(autocov) # rescale autocov to make fit more robust
+    fit = curve_fit(gauss_kernel, lags, autocov./ma, [α_guess, λ_guess])
+    α, λ = fit.param
+    return MvGaussianNoiseModel(lags[1], α * √ma, λ)
 end
 
 """
