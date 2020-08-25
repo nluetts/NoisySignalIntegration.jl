@@ -1,4 +1,3 @@
-
 # Usage Guide
 
 As an usage example, we will go through the analysis of a simulated FTIR spectrum.
@@ -68,11 +67,40 @@ plot!(noise, label="NoiseSample object")
 In order to simulate the noise, we must determine its characteristics.
 A model is retrieved by fitting the estimated autocovariance:
 
-```@example FTIRnm = fit_noise(noise)
+```@example FTIR
+nm = fit_noise(noise)
 # plot the fitting result:
 plot_autocov(noise, nm);
 lens!([0, 1.5], [-1e-3, 3e-3], inset = (1, bbox(0.3, 0.3, 0.3, 0.3)))
 ```
+
+```@meta
+DocTestSetup = quote
+using MCIntegrate
+end
+```
+
+!!! warning "Data requirements"
+    Data that shall be analyzed with [fit_noise] must be sorted from low to high x-values.
+    If the data in your original `Curve` object is not sorted, you can use `Base.sort()` to fix the order:
+
+    ```jldoctest
+    julia> c = Curve([2, 6, 1], [4, 12, 2]);
+    
+    julia> c = sort(c)
+    Curve{Int64}, 3 datapoints
+    (1, 2)
+    (2, 4)
+    (6, 12)
+    ```
+
+    Afterwards, [crop] the noise sample and proceed with your analysis.
+    
+
+```@meta
+DocTestSetup = nothing
+```
+
 
 Plotting the model next to the noise object is an important sanity check to verify that the fitting yielded a sensible estimate and that generated noise samples do mimic the experimental noise. They keyword `draws` controls how many random generated noise draws are plotted.
 

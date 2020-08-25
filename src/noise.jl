@@ -3,7 +3,7 @@
 
 Subtract polynomial from `y` data.
 """
-detrend(x, y, poly_order) = y - fit(x, y, poly_order).(x)
+detrend(x, y, poly_order) = poly_order == 0 ? y .- mean(y) : y - fit(x, y, poly_order).(x)
 detrend(c::Curve, poly_order) = Curve(c.x, detrend(c.x, c.y, poly_order))
 
 

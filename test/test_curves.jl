@@ -1,5 +1,7 @@
 using Test
 using MCIntegrate
+using MonteCarloMeasurements
+using Random: seed!
 
 @testset "Curve" begin
 
@@ -30,6 +32,21 @@ using MCIntegrate
     @test_throws ArgumentError Curve([1.0], [4.0, 4.0])
     @test_throws ArgumentError Curve([1.0, 2.0], [4.0])
 end;
+
+@testset "test sort" begin
+    c = Curve([2, 6, 1], [4, 12, 2])
+    @test sort(c) == Curve([1, 2, 6], [2, 4, 12])
+    c = Curve(2:-0.5:0, 4:-0.5:2)
+    @test sort(c) == Curve([0.0, 0.5, 1.0, 1.5, 2.0], [2.0, 2.5, 3.0, 3.5, 4.0])
+    ns = NoiseSample(c)
+    @test sort(ns) == NoiseSample([0.0, 0.5, 1.0, 1.5, 2.0], [-1.0, -0.5, 0.0, 0.5, 1.0])
+    seed!(1)
+    uc = c ± 0.01
+    @test sort(uc).x == [0.0, 0.5, 1.0, 1.5, 2.0]
+    for (yᵢ, y) in zip(sort(uc).y, collect(2:0.5:4))
+        @test yᵢ ≈ y
+    end
+end
 
 @testset "create Curves from collections" begin
     x = 1:10

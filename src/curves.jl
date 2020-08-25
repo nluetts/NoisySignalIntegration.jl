@@ -30,6 +30,12 @@ Base.:(*)(y, c::AbstractCurve) = typeof(c)(c.x, y .* c.y)
 Base.:(/)(y, c::AbstractCurve) = typeof(c)(c.x, y ./ c.y)
 Base.vcat(c0::AbstractCurve, c1::AbstractCurve) = typeof(c0)(vcat(c0.x, c1.x), vcat(c0.y, c1.y))
 
+function Base.sort(c::T) where {T <: AbstractCurve}
+    x, y = c.x, c.y
+    ind = sortperm(x)
+    return T(x[ind], y[ind])
+end
+
 function Base.show(io::IO, c::AbstractCurve)
     println(io, "$(typeof(c)), $(length(c)) datapoints")
     if length(c) > 10
@@ -169,13 +175,13 @@ end
 UncertainCurve(x::Vector{T}, y::Vector{Particles{T, N}}) where {T, N} = UncertainCurve{T, N}(x, y)
 UncertainCurve(y::Vector{Particles{T, N}}) where {T, N} = UncertainCurve(collect(T, 1:length(y)), y)
 
+
 """
     get_draw(n, p::Particles)
 
 Retrieve the `n`th particle of the particles stored in `p`.
 """
 get_draw(n, p::Particles) = p.particles[n]
-
 
 """
     get_draw(n, uc::UncertainCurve)
@@ -191,6 +197,8 @@ Retrieve the mean of the `UncertainCurve` `uc`.
 """
 Statistics.mean(uc::UncertainCurve) = Curve(uc.x, Statistics.mean(uc.y))
 
+
+MonteCarloMeasurements.:(±)(c::Curve, v) = UncertainCurve(c.x, c.y ± v)
 
 # utility functions
 

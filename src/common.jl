@@ -89,8 +89,8 @@ julia> trapz(x, y, -10, 20, subtract_baseline=false)
 10.0
 
 
-julia> trapz(x, y, 1.1, 1.3, subtract_baseline=false) # if we integrate "between" the grid, data points are interpolated
-0.19999999999999996
+julia> trapz(x, y, 1.1, 1.3, subtract_baseline=false) ≈ 0.2 # if we integrate "between" the grid, data points are interpolated
+true
 ```
 """
 function trapz(x::AbstractArray{T}, y::AbstractArray{T}, left::T, right::T; subtract_baseline=true) where {T<:AbstractFloat}

@@ -9,12 +9,13 @@ using MCIntegrate
 DocMeta.setdocmeta!(MCIntegrate, :DocTestSetup, :(using MCIntegrate); recursive=true)
 
 makedocs(
-    sitename="NoisyIntegration.jl",
+    sitename="NoisySignalIntegration.jl",
     modules=[MCIntegrate],
     pages = [
         "Home" => "index.md",
         "Usage Guide" => "guide.md",
         "Examples" => "examples.md",
+        "Internals" => "internals.md",
         "API reference" => "API.md"
     ],
     highlightsig=true
