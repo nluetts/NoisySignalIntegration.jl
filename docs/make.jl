@@ -13,6 +13,7 @@ makedocs(
     modules=[MCIntegrate],
     pages = [
         "Home" => "index.md",
+        "Package Overview" => "overview.md",
         "Usage Guide" => "guide.md",
         "Examples" => "examples.md",
         "Internals" => "internals.md",

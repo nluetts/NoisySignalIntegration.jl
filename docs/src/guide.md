@@ -1,6 +1,6 @@
 # Usage Guide
 
-As an usage example, we will go through the analysis of a simulated FTIR spectrum.
+As a more detailed usage example, we will go through the analysis of a simulated FTIR spectrum.
 
 Suppose our spectrum looks like the following simulation:
 
@@ -11,21 +11,7 @@ using Random: seed!
 
 using MCIntegrate
 
-seed!(42)
-
-gausspeaks(x, p) = sum([@. A * 1/√(2π * σ^2) * exp(-(x - μ)^2 / (2σ^2)) for (A, μ, σ) in p])
-
-spectrum = let
-    x = collect(0:0.1:100)
-
-    # simulate FTIR spectrum with two bands
-    # the true intensity ratio is 1 : 2
-    bands = gausspeaks(x, [(1, 15, √0.5), (2, 30, √0.5)])
-    baseline = @. 1.0 + x*1.5e-2 - (x-50)^3*3e-6
-    uc = add_noise(Curve(x, baseline + bands), MvGaussianNoiseModel(0.1, 0.05, 0.5), 1)
-    MCIntegrate.get_draw(1, uc)
-end
-
+spectrum = MCIntegrate.testdata_1()
 plot(spectrum, label="simulated spectrum")
 ```
 
@@ -79,28 +65,6 @@ DocTestSetup = quote
 using MCIntegrate
 end
 ```
-
-!!! warning "Data requirements"
-    Data that shall be analyzed with [fit_noise] must be sorted from low to high x-values.
-    If the data in your original `Curve` object is not sorted, you can use `Base.sort()` to fix the order:
-
-    ```jldoctest
-    julia> c = Curve([2, 6, 1], [4, 12, 2]);
-    
-    julia> c = sort(c)
-    Curve{Int64}, 3 datapoints
-    (1, 2)
-    (2, 4)
-    (6, 12)
-    ```
-
-    Afterwards, [crop] the noise sample and proceed with your analysis.
-    
-
-```@meta
-DocTestSetup = nothing
-```
-
 
 Plotting the model next to the noise object is an important sanity check to verify that the fitting yielded a sensible estimate and that generated noise samples do mimic the experimental noise. They keyword `draws` controls how many random generated noise draws are plotted.
 
@@ -323,4 +287,4 @@ percentile(ratio, 50) |> println
 percentile(ratio, 97.5) |> println
 ```
 
-We find that, considering the noise and the uncertainty in the integration bounds, we end up with a 95% uncertainty interval of roughly 0.4 to 0.8.
+We find that, considering the noise and the uncertainty in the integration bounds, we end up with a 95% uncertainty interval of roughly 0.4 to 0.7.

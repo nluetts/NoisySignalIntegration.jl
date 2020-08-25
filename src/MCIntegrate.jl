@@ -8,7 +8,7 @@ using MonteCarloMeasurements
 using Plots
 using Polynomials:          fit
 using Printf:               @printf, @sprintf
-using Random
+using Random:               seed!
 using RecipesBase:          @recipe
 using StatsBase:            autocov
 
@@ -21,6 +21,7 @@ include("bounds.jl")
 include("noise.jl")
 include("plotting.jl")
 include("integration.jl")
+include("testdata.jl")
 
 export
     Curve,

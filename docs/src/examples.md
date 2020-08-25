@@ -16,20 +16,8 @@ using MonteCarloMeasurements
 
 using MCIntegrate
 
-seed!(42)
 
-function get_spectrum(σ=0.1)
-    x = collect(0:0.1:100)
-    # simulate Raman spectrum with two bands
-    # the true intensity ratio is 1 : 2
-    bands = @. exp(-(x-15)^2) + 2 * exp(-(x-30)^2)
-    baseline = @. 1.0 + 1.5e-4x^2 - 3e-6x^3
-    noise = randn(length(x)) * σ
-    Curve(x, baseline + bands + noise)
-end
-
-spectrum = get_spectrum(0.1)
-
+spectrum = MCIntegrate.testdata_2()
 plot(spectrum, label="simulated spectrum")
 ```
 
