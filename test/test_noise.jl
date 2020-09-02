@@ -1,10 +1,3 @@
-using Test
-using MCIntegrate
-using Random: seed!
-using StatsBase: mean
-
-const mci = MCIntegrate
-
 @testset "detrend()" begin
     # use detrend on polynomials and see if results are close to 0
     # (add 1. and see if results ≈ 1. as a workaround)
@@ -12,13 +5,13 @@ const mci = MCIntegrate
         @test begin
             x = collect(Float64, 1:20)
             y = x.^n
-            all(yᵢ + 1.0 ≈ 1.0 for yᵢ ∈ mci.detrend(x, y, n)) == true
+            all(yᵢ + 1.0 ≈ 1.0 for yᵢ ∈ nsi.detrend(x, y, n)) == true
         end
     end
     @test begin
         x = collect(Float64, 1:20)
         y = @. 0.1 + 2x - 0.01x^2
-        all(yᵢ + 1.0 ≈ 1.0 for yᵢ ∈ mci.detrend(x, y, 2)) == true
+        all(yᵢ + 1.0 ≈ 1.0 for yᵢ ∈ nsi.detrend(x, y, 2)) == true
     end
 end
 
@@ -69,17 +62,17 @@ end
 
 
 @testset "gauss_kernel()" begin
-    @test mci.gauss_kernel(0, [2, 1]) == 4.0
-    @test mci.gauss_kernel(2.0, [2, 2]) == 4.0 * exp(-0.5)
-    @test mci.gauss_kernel(4.0, [2, 1]) == 4.0 * exp(-8)
-    @test mci.gauss_kernel(4.0, [0, 1]) == 0.0
+    @test nsi.gauss_kernel(0, [2, 1]) == 4.0
+    @test nsi.gauss_kernel(2.0, [2, 2]) == 4.0 * exp(-0.5)
+    @test nsi.gauss_kernel(4.0, [2, 1]) == 4.0 * exp(-8)
+    @test nsi.gauss_kernel(4.0, [0, 1]) == 0.0
 end
 
 
 @testset "get_cov()" begin
     let f = 1.0000001
-        @test_throws ArgumentError mci.get_cov(1.0, -1, 2.0, 1.0)
-        @test mci.get_cov(1.0, 3, 2.0, 1.0) == 4 .* [f         exp(-0.5) exp(-2)  ;
+        @test_throws ArgumentError nsi.get_cov(1.0, -1, 2.0, 1.0)
+        @test nsi.get_cov(1.0, 3, 2.0, 1.0) == 4 .* [f         exp(-0.5) exp(-2)  ;
                                                      exp(-0.5) f         exp(-0.5);
                                                      exp(-2)   exp(-0.5) f         ]
     end
@@ -111,11 +104,11 @@ end
 @testset "generate_noise() (correlated)" begin
     let
         nm = MvGaussianNoiseModel(1.0, 3.0, 5.0)
-        noise = mci.generate_noise(nm, 100, 2000)
+        noise = nsi.generate_noise(nm, 100, 2000)
         @test length(noise) == 100
         @test noise |> first |> x -> x.particles |> length == 2000
-        ns = NoiseSample(mci.get_draw.(1, noise))
-        noise2 = mci.generate_noise(ns, 100)
+        ns = NoiseSample(nsi.get_draw.(1, noise))
+        noise2 = nsi.generate_noise(ns, 100)
         @test noise2 |> first |> x -> x.particles |> length == 100
     end
 end
@@ -124,7 +117,7 @@ end
 @testset "generate_noise() (uncorrelated)" begin
     let
         nm = GaussianNoiseModel(1.0)
-        noise = mci.generate_noise(nm, 100, 2000)
+        noise = nsi.generate_noise(nm, 100, 2000)
         @test length(noise) == 100
         @test noise |> first |> x -> x.particles |> length == 2000
     end
@@ -141,12 +134,12 @@ end
                              (0.5, 2.0, 0.5),
                              (2.0, 0.5, 3.0)]
             nm = MvGaussianNoiseModel(δxᵢ, αᵢ, λᵢ)
-            noise = mci.generate_noise(nm, len, samples)
+            noise = nsi.generate_noise(nm, len, samples)
             A = Float64[]
             Λ = Float64[]
             for i in 1:samples
                 x = δxᵢ:δxᵢ:(len * δxᵢ) |> collect
-                ns = NoiseSample(x, mci.get_draw.(i, noise))
+                ns = NoiseSample(x, nsi.get_draw.(i, noise))
                 noise_param = fit_noise(ns)
                 push!(A, noise_param.α)
                 push!(Λ, noise_param.λ)

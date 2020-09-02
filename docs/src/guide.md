@@ -6,14 +6,14 @@ FTIR spectrum.
 Suppose our spectrum looks like the following simulation:
 
 ```@example FTIR
-using Distributions, MCIntegrate, Plots
+using Distributions, NoisySignalIntegration, Plots
 using Random: seed!
 
-spectrum = MCIntegrate.testdata_1()
+spectrum = NoisySignalIntegration.testdata_1()
 plot(spectrum, label="simulated spectrum")
 ```
 
-In order two apply the MCIntegrate uncertainty analysis, we must perform 4 basic
+In order two apply the NoisySignalIntegration uncertainty analysis, we must perform 4 basic
 steps:
 1. Crop from the spectrum the region that contains the signals and the region
    that contains a representative sample of the noise
@@ -61,7 +61,7 @@ is retrieved by fitting the estimated autocovariance:
 nm = fit_noise(noise)
 
 # plot the fitting result:
-plot_autocov(noise, nm);
+plotautocovfit(noise, nm);
 lens!([0, 1.5], [-1e-3, 3e-3], inset = (1, bbox(0.3, 0.3, 0.3, 0.3)))
 ```
 
@@ -103,7 +103,7 @@ mcplot(uncertain_spectrum; draws=20)
 
 ## Integration bounds
 
-MCIntegrate deals with uncertainty in placing integration bounds by expressing
+NoisySignalIntegration deals with uncertainty in placing integration bounds by expressing
 each bound by one ore more probability distributions. Any continuous, univariate
 distribution from
 [Distributions.jl](https://github.com/JuliaStats/Distributions.jl) can be used
@@ -172,7 +172,7 @@ A compromise between the uniform and normal distribution is a scaled and shifted
 beta(2, 2) distribution. Its shape resembles the shape of the normal
 distribution but it is missing the tails. Since a scaled and shifted beta
 distribution does not ship with
-[Distributions.jl](https://github.com/JuliaStats/Distributions.jl), MCIntegrate
+[Distributions.jl](https://github.com/JuliaStats/Distributions.jl), NoisySignalIntegration
 includes the function [`scale_shift_beta`](@ref)`(α, β, a, b)` which can be used to
 generate a beta(α, β) distribution that has a support in the interval `a`
 to `b`.

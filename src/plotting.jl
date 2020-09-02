@@ -1,5 +1,5 @@
-const PRIMARY_COLOR = palette(:default)[1]
-const SECONDARY_COLOR = palette(:default)[2]
+const PRIMARY_COLOR = :blue
+const SECONDARY_COLOR = :red
 
 
 function get_left_right_points(x::AbstractArray{T}, y::AbstractArray{T}, left::T, right::T; subtract_baseline=true) where {T<:AbstractFloat}
@@ -75,7 +75,7 @@ end
     draws < 0 && throw(ArgumentError("Number of samples must be > 0."))
 
     legend := :none
-    layout := @layout grid(draws + 1, 1)
+    layout := (draws + 1, 1)
     link := :both
     
     delete!(plotattributes, :draws)
@@ -149,7 +149,7 @@ end
 ) where {T, N}
 
     legend := :none
-    layout := @layout grid(draws + 1, 1)
+    layout := (draws + 1, 1)
     link := :both
     
     mean_uc = mean(uc)
@@ -204,7 +204,7 @@ end
 @recipe function plot_recipe(x::Vector{T}, nm::AbstractNoiseModel; draws=3, subplot_offset=0) where {T <: Real}
     draws < 0 && throw(ArgumentError("Number of samples must be > 0."))
 
-    layout --> @layout grid(draws, 1)
+    layout --> (draws, 1)
     legend --> :none
     link --> :both
 
@@ -230,7 +230,7 @@ end
 
 @recipe function plot_recipe(ns::NoiseSample, nm::AbstractNoiseModel; draws=3)
     
-    layout --> @layout grid(draws+1, 1)
+    layout --> (draws+1, 1)
     legend --> :none
     link --> :both
 
@@ -251,9 +251,17 @@ end
 # -----------------------------------
 # enable plotting of auto covariance
 # -----------------------------------
-struct _AutoCovPlot end # just for dispatch
 
-@recipe function plot_repice(ns::NoiseSample, nm::MvGaussianNoiseModel, ::Type{_AutoCovPlot})
+"""
+    plotautocovfit(ns::NoiseSample, nm::MvGaussianNoiseModel; kw...)
+
+Plot results of autocovariance fit.
+"""
+@userplot PlotAutoCovFit
+@recipe function plot_repice(pac::PlotAutoCovFit)
+
+    ns, nm = pac.args
+
     xguide := "lag"
     yguide := "auto-covariance"
     
@@ -271,15 +279,6 @@ struct _AutoCovPlot end # just for dispatch
         lags, gauss_kernel(lags, [nm.α, nm.λ])
     end
 end
-
-
-"""
-    plot_autocov(ns::NoiseSample, nm::MvGaussianNoiseModel; kw...)
-
-Plot results of autocovariance fit.
-"""
-plot_autocov(ns::NoiseSample, nm::MvGaussianNoiseModel; kw...) = plot(ns, nm, _AutoCovPlot; kw...)
-
 
 MonteCarloMeasurements.mcplot(uc::UncertainCurve; draws=10, alpha=0.5, kw...) = MonteCarloMeasurements.mcplot(uc.x, uc.y, draws; alpha=0.5, kw...)
 

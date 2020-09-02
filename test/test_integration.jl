@@ -1,11 +1,5 @@
-using Test
-using Distributions
-using MCIntegrate
-using Random
-
-
 function get_test_spectrum(seed)
-    Random.seed!(seed)
+    seed!(seed)
     x = collect(0:0.1:200)
     y = @. exp(-(x-15)^2) + 2 * exp(-(x-30)^2)
     @. y += 1.0 + x*1.5e-2 - (x-50)^3*3e-7 # add polynomial baseline

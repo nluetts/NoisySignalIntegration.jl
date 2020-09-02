@@ -3,14 +3,14 @@ using Pkg
 Pkg.activate(@__DIR__) # activate the docs environment
 
 using Documenter
-using MCIntegrate
+using NoisySignalIntegration
 
 # include doctests from docstrings
-DocMeta.setdocmeta!(MCIntegrate, :DocTestSetup, :(using MCIntegrate); recursive=true)
+DocMeta.setdocmeta!(NoisySignalIntegration, :DocTestSetup, :(using NoisySignalIntegration); recursive=true)
 
 makedocs(
     sitename="NoisySignalIntegration.jl",
-    modules=[MCIntegrate],
+    modules=[NoisySignalIntegration],
     pages = [
         "Home" => "index.md",
         "Package Overview" => "overview.md",

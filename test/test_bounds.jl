@@ -1,13 +1,3 @@
-using Distributions
-using MCIntegrate
-using MonteCarloMeasurements
-import Random: seed!, rand
-using StatsBase: std
-using Test
-
-const NP = MonteCarloMeasurements.DEFAULT_NUM_PARTICLES
-const mci = MCIntegrate
-
 num_part(::UncertainBound{T, N}) where {T, N} = N
 ub_eltype(::UncertainBound{T, N}) where {T, N} = T
 
@@ -23,7 +13,7 @@ end
     ps = Particles([1, 2, 3])
     ub = UncertainBound(ps, ps)
     for i ∈ 1:3
-        @test mci.get_draw(i, ub) == [i, i]
+        @test nsi.get_draw(i, ub) == [i, i]
     end
 end
 

@@ -5,11 +5,6 @@ Tests compare results with results retrieved from an ealier implementation of th
 (data and previous results from https://doi.org/10.1039/C9CP00435A).
 """
 
-using Test
-using MCIntegrate
-using Random: seed!
-using StatsBase: percentile
-
 function read_test_data(fn)
     return open(fn, "r") do io
         lines = readlines(io)

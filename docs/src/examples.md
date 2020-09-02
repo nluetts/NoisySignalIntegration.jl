@@ -14,10 +14,10 @@ using Random: seed!
 using Statistics
 using MonteCarloMeasurements
 
-using MCIntegrate
+using NoisySignalIntegration
 
 
-spectrum = MCIntegrate.testdata_2()
+spectrum = NoisySignalIntegration.testdata_2()
 plot(spectrum, label="simulated spectrum")
 ```
 
@@ -70,7 +70,7 @@ to 0.
 We go once through the regular workflow. First, we generate the test data:
 
 ```@example mh
-using MCIntegrate
+using NoisySignalIntegration
 using Plots
 using Random: seed!
 
@@ -81,7 +81,7 @@ function mexican_hat_curve(noise_model)
     y = @. (1 - x^2)*exp(-x^2/2)
     mh = Curve(x, y)
     uncertain_mh = add_noise(mh, noise_model, 1)
-    return MCIntegrate.get_draw(1, uncertain_mh)
+    return NoisySignalIntegration.get_draw(1, uncertain_mh)
 end
 
 noisy_mh_curve = mexican_hat_curve(MvGaussianNoiseModel(0.1, 0.05, 0.5))
@@ -101,7 +101,7 @@ noise_model = fit_noise(noise)
 ```
 
 ```@example mh
-plot_autocov(noise, noise_model)
+plotautocovfit(noise, noise_model)
 ```
 
 Check that generated noise samples look realistic:

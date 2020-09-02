@@ -1,8 +1,3 @@
-using Test
-using MCIntegrate
-using MonteCarloMeasurements
-using Random: seed!
-
 @testset "Curve" begin
 
     curve = Curve([3, 4, 5])

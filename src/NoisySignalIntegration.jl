@@ -1,15 +1,14 @@
-module MCIntegrate
+module NoisySignalIntegration
 
 using Distributions:        ContinuousUnivariateDistribution
-using Distributions:        MvNormal, Beta, LocationScale, mean
-using LinearAlgebra:        eachcol
+using Distributions:        MvNormal, Beta, LocationScale
 using LsqFit:               curve_fit
 using MonteCarloMeasurements
-using Plots
 using Polynomials:          fit
-using Printf:               @printf, @sprintf
+using Printf:               @sprintf
 using Random:               seed!
-using RecipesBase:          @recipe
+using RecipesBase
+using Statistics:           mean
 using StatsBase:            autocov
 
 import Statistics
@@ -36,7 +35,7 @@ export
     get_cov,
     mc_integrate,
     mean,
-    plot_autocov,
+    plotautocovfit,
     plot,
     scale_shift_beta,
     std,

@@ -11,7 +11,7 @@ of uncertain areas of type `Particles{T, N}`.
 
 `intfun`:
 The core integration function that is used to numerically integrate each draw.
-Defaults to `MCIntegrate.trapz`.
+Defaults to `NoisySignalIntegration.trapz`.
 The function that is used to substitute [`trapz`](@ref) must share its call signature.
 
 `subtract_baseline`:

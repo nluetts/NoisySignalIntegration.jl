@@ -36,7 +36,7 @@ add_noise
 ```@docs
 fit_noise
 
-plot_autocov
+plotautocovfit
 
 ```
 

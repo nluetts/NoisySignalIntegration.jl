@@ -3,7 +3,7 @@
 using Revise
 
 ##
-using MCIntegrate
+using NoisySignalIntegration
 
 
 ## Imports

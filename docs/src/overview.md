@@ -12,10 +12,10 @@ shall be integrated. `Curve` wraps two vectors of identical element type and
 length. It was introduced mainly for convenience and simpler plotting.
 
 From a `Curve` object, a [`NoiseSample`](@ref) can be derived. A `NoiseSample`
-is required to determine the noise amplutide and autocorrelation length (if the
+is required to determine the noise amplitude and autocorrelation length (if the
 noise is strongly correlated, as is often the case in FTIR spectra). With the
 noise parameters, a noise model can be constructed. This is either a
-[`GaussianNoiseModel`](@ref) (uncorrelated Gaussian noise) or a
+[`GaussianNoiseModel`](@ref) (uncorrelated Gaussian noise) or an
 [`MvGaussianNoiseModel`](@ref) (correlated Gaussian noise).
 
 From the `Curve` object and noise model an [`UncertainCurve`](@ref) object can
@@ -24,7 +24,7 @@ noise. The `UncertainCurve` object is the first input required for the actual
 integration function [`mc_integrate`](@ref).
 
 !!! tip "Crop your data to the relevant region"
-    While your dataset should contain a somewhat lengthy portion of noise for
+    While your input dataset should contain a somewhat lengthy portion of noise for
     the noise analysis step, you should not include this portion of the data in
     the actual integration, as this will only decrease performance while not
     offering any benefits. You should always [`crop`](@ref) your data to only
@@ -69,7 +69,7 @@ some basic requirements:
 Example:
 
 ```jldoctest
-julia> using MCIntegrate
+julia> using NoisySignalIntegration
 
 julia> c = Curve([2, 6, 1], [4, 12, 2]);
 
@@ -90,9 +90,9 @@ Curve{Int64}, 3 datapoints
 Example: Interpolating data on evenly spaced grid
 
 ```@example evengrid
-using MCIntegrate, Interpolations, Plots
+using NoisySignalIntegration, Interpolations, Plots
 
-c = testdata_3() # test dataset with uneven grid spacing
+c = NoisySignalIntegration.testdata_3() # test dataset with uneven grid spacing
 diff(c.x)
 ```
 
