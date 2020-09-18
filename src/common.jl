@@ -163,3 +163,49 @@ function trapz(x::AbstractArray{T}, y::AbstractArray{T}, left, right; subtract_b
     right = T(right)
     return trapz(x, y, left, right, subtract_baseline=subtract_baseline)
 end
+
+
+"""
+    @samples n::Integer e::Expression
+
+Create a `Particles` object with `n` samples using a `±` or `..` expression.
+
+# Examples
+
+```jldoctest
+julia> using NoisySignalIntegration
+
+julia> @samples 9999 1 ± 1
+Particles{Float64,9999}
+ 1.0 ± 1.0
+
+
+julia> @samples 9999 1 .. 2
+Particles{Float64,9999}
+ 1.5 ± 0.289
+```
+"""
+macro samples(n::Integer, e::Expr)
+    err = ArgumentError("Expression not understood.")
+    if length(e.args) != 3
+        return :( throw($err) )
+    end
+    
+    op, x, y = e.args
+
+    if op == :±
+        return quote
+            a = $(esc(x))
+            b = $(esc(y))
+            Particles($n, Normal(a, b))
+        end
+    elseif op == :..
+        return quote
+            a = $(esc(x))
+            b = $(esc(y))
+            Particles($n, Uniform(a, b))
+        end
+    else
+        return :( throw($err) )
+    end
+end

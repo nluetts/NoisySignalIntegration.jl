@@ -89,6 +89,46 @@ end
         @test nsi.trapz(x, y, 6, 1, subtract_baseline=false) == 13.25
         @test nsi.trapz(x, y, 1.5, 7, subtract_baseline=false) == 15.125
     end
+end
 
-
+@testset "@samples" begin
+    seed!(1)
+    @testset "Normal" begin
+        ref = Particles(10_000, Normal(1, 1))
+        out = @samples 10_000 1 ± 1
+        @test mean(ref) ≈ mean(out)
+        @test std(ref) ≈ std(out)
+        # pass expression to macro
+        out = @samples 10_000 (2 / 2) ± (3 - 2)
+        @test mean(ref) ≈ mean(out)
+        @test std(ref) ≈ std(out)
+        # pass variables to macro
+        out = let
+            a = 1
+            b = 1
+            @samples 10_000 a ± b
+        end
+        @test mean(ref) ≈ mean(out)
+        @test std(ref) ≈ std(out)
+    end
+    @testset "Uniform" begin
+        ref = Particles(10_000, Uniform(1, 2))
+        out = @samples 10_000 1 .. 2
+        @test mean(ref) ≈ mean(out)
+        @test std(ref) ≈ std(out)
+        # pass expression to macro
+        out = @samples 10_000 (2 / 2) .. (3 - 1)
+        @test mean(ref) ≈ mean(out)
+        @test std(ref) ≈ std(out)
+        # pass variables to macro
+        out = let
+            a = 1
+            b = 2
+            @samples 10_000 a .. b
+        end
+        @test mean(ref) ≈ mean(out)
+        @test std(ref) ≈ std(out)
+    end
+    @test_throws ArgumentError (@samples 1 1 + 1)
+    @test_throws ArgumentError (@samples 1 1 + 1 + 1)
 end

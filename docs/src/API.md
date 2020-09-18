@@ -53,3 +53,9 @@ mc_integrate
 
 trapz
 ```
+
+## Macros
+
+```@docs
+@samples
+```

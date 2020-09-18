@@ -57,6 +57,16 @@ testdata_3() = let
 end
 
 
+"""
+Return test dataset with four peaks with area ratio 1 : 2 : 3 : 0.5 and correlated noise
+(α = 0.05, λ = 0.5).
+"""
+testdata_4() = let
+    x = collect(0:0.1:200)
+    baseline = @. 1.0 + x*2.5e-3 - (x-50)^3*8e-8
+    signals = [(1, 15, √0.5), (2, 30, √0.5), (3, 60, √0.5), (1, 85, √0.5)]
+    generate_testdata(x, signals, MvGaussianNoiseModel(0.1, 0.05, 0.5); baseline=baseline, seedvalue=42)
+end
 
 
 

@@ -77,6 +77,7 @@ end
     legend := :none
     layout := (draws + 1, 1)
     link := :both
+    size --> (500, 600)
     
     delete!(plotattributes, :draws)
   
@@ -151,6 +152,7 @@ end
     legend := :none
     layout := (draws + 1, 1)
     link := :both
+    size --> (500, 600)
     
     mean_uc = mean(uc)
     
@@ -207,6 +209,7 @@ end
     layout --> (draws, 1)
     legend --> :none
     link --> :both
+    size --> (500, 600)
 
     delete!(plotattributes, :grid_points)
     delete!(plotattributes, :draws)
@@ -233,6 +236,7 @@ end
     layout --> (draws+1, 1)
     legend --> :none
     link --> :both
+    size --> (500, 600)
 
     @series begin
             subplot := 1
@@ -284,7 +288,7 @@ MonteCarloMeasurements.mcplot(uc::UncertainCurve; draws=10, alpha=0.5, kw...) = 
 
 
 # --------------------------------------------
-# enable plotting of UncertainCurve histograms
+# enable plotting of UncertainBound histograms
 # --------------------------------------------
 
 @recipe plot_repice(::Type{T}, ub::T) where {T <: UncertainBound} = [ub.left.particles, ub.right.particles]

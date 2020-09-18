@@ -39,6 +39,7 @@ export
     plot,
     scale_shift_beta,
     std,
-    trapz
+    trapz,
+    @samples
 
 end # module

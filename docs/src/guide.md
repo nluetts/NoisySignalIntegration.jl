@@ -3,6 +3,14 @@
 As a more detailed usage example, we will go through the analysis of a simulated
 FTIR spectrum.
 
+!!! info "A note on plotting"
+    `NoisySignalIntegration` provides several
+    "[recipes](http://docs.juliaplots.org/latest/recipes/)" for
+    [`Plots.jl`](http://docs.juliaplots.org/latest/) to easily plot the various
+    (interim) results. Often, merely calling `plot()` and passing in data types
+    from `NoisySignalIntegration` will work. Examples are included in this
+    guide.
+
 Suppose our spectrum looks like the following simulation:
 
 ```@example FTIR
@@ -13,15 +21,15 @@ spectrum = NoisySignalIntegration.testdata_1()
 plot(spectrum, label="simulated spectrum")
 ```
 
-In order two apply the NoisySignalIntegration uncertainty analysis, we must perform 4 basic
-steps:
-1. Crop from the spectrum the region that contains the signals and the region
+In order two apply the `NoisySignalIntegration` uncertainty analysis, we must perform 4 basic steps:
+
+1. From the spectrum, crop the region that contains the signals and the region
    that contains a representative sample of the noise
 1. Characterize the noise (to be able to simulate it in the Monte-Carlo draws) 
 1. Set integration bounds and their associated uncertainties
 1. Run the [`mc_integrate`](@ref) function
 
-## Cropping the spectrum
+## [Cropping the spectrum](@id crop)
 
 Let's start by dividing the spectrum into the bands we want to integrate and the
 noise we want to analyse. We can do this by using the [`crop`](@ref) function.
@@ -62,17 +70,27 @@ nm = fit_noise(noise)
 
 # plot the fitting result:
 plotautocovfit(noise, nm);
+# create zoomed inset:
 lens!([0, 1.5], [-1e-3, 3e-3], inset = (1, bbox(0.3, 0.3, 0.3, 0.3)))
 ```
 
 Plotting the model next to the noise object is an important sanity check to
 verify that the fitting yielded a sensible estimate and that generated noise
-samples do mimic the experimental noise. They keyword `draws` controls how many
-random generated noise draws are plotted.
+samples do mimic the experimental noise.
 
 ```@example FTIR
 plot(noise, nm)
 ```
+
+!!! info "plotting more samples"
+    They keyword `draws` controls how many random generated noise draws are
+    plotted:
+    
+    ```julia
+    plot(noise, nm; draws=5) # draw 5 instead of 3 (default) noise draws
+    ```
+
+    This also works when you [plot Monte-Carlo draws](@ref plot_mc_draws).
 
 ## Preparing the spectrum for integration
 
@@ -80,7 +98,7 @@ Now that we have a noise model, we can generate an [`UncertainCurve`](@ref).
 An `UncertainCurve` holds random draws of the original spectrum plus noise:
 
 ```@example FTIR
-uncertain_spectrum = add_noise(slice_bands, nm, 50_000)
+uncertain_spectrum = add_noise(slice_bands, nm, 50_000) # generate 50_000 random samples
 nothing # hide
 ```
 
@@ -91,7 +109,7 @@ confidence band:
 plot(uncertain_spectrum)
 ```
 
-We can plot also single draws by using the `mcplot()` function from
+We can also plot single draws by using the `mcplot()` function from
 `MonteCarloMeasurements.jl`:
 
 ```@example FTIR
@@ -101,11 +119,11 @@ mcplot(uncertain_spectrum; draws=20)
 ```
 
 
-## Integration bounds
+## [Integration bounds](@id bounds_guide)
 
-NoisySignalIntegration deals with uncertainty in placing integration bounds by expressing
-each bound by one ore more probability distributions. Any continuous, univariate
-distribution from
+`NoisySignalIntegration` deals with uncertainty in placing integration bounds by
+expressing each bound by one ore more probability distributions. Any continuous,
+univariate distribution from
 [Distributions.jl](https://github.com/JuliaStats/Distributions.jl) can be used
 to define integration bounds.
 
@@ -165,17 +183,17 @@ histogram(lrb_normal; label=["start" "end"])
 
 However, in this particular case of describing the uncertainty of integration
 bounds, the tails of the normal distribution are problematic, because they lead
-to occasional extreme values of the intergration interval, which would not seem
+to occasional extreme values of the integration interval, which would not seem
 realistic.
 
 A compromise between the uniform and normal distribution is a scaled and shifted
 beta(2, 2) distribution. Its shape resembles the shape of the normal
 distribution but it is missing the tails. Since a scaled and shifted beta
 distribution does not ship with
-[Distributions.jl](https://github.com/JuliaStats/Distributions.jl), NoisySignalIntegration
-includes the function [`scale_shift_beta`](@ref)`(α, β, a, b)` which can be used to
-generate a beta(α, β) distribution that has a support in the interval `a`
-to `b`.
+[Distributions.jl](https://github.com/JuliaStats/Distributions.jl),
+`NoisySignalIntegration` includes the function [`scale_shift_beta`](@ref)`(α, β,
+a, b)` which can be used to generate a beta(α, β) distribution that has a
+support in the interval `a` to `b`.
 
 Again, a demonstration may help to explain (we keep the normal distribution for
 the right bound so we can compare the distributions):
@@ -227,7 +245,8 @@ histogram(wb; label=["start" "end"], normalize=true, linewidth=0)
 
 The crucial difference compared to the bound defined from two distributions is
 that the start and end points are now placed symmetrically with respect to the
-band's peak position. The `UncertainBound` now "follows" the peak, so to speak.
+band's peak position. The `UncertainBound` now "follows" the peak in each
+Monte-Carlo draw, so to speak.
 
 ### Defining an `UncertainBound` using several positions, a width, and `UncertainCurve` (several symmetric bands with same width)
 
@@ -257,7 +276,7 @@ histogram!(wb_2; label=["start 2" "end 2"], normalize=true, linewidth=0)
 ```
 
 It is not obvious from the histograms that the widths of the integration windows
-stored in `wb_1` and `wb_2` are identical, so we can calculate and print them
+stored in `wb_1` and `wb_2` are identical, so we calculate and print them here
 manually to prove this:
 
 ```@example FTIR
@@ -272,46 +291,49 @@ end
 ```
 
 !!! warning "Watch out for the support of your width distribution"
-    Note that the distribution that you pass to `UncertainBound` along with
-    a position/positions must not allow for negativ values (i.e. its support must end
-    at or better before 0). Keep in mind that a normal distribution, for example,
-    has support from -∞ to ∞, so it is a poor choice here.
+    Note that the distribution that you pass to `UncertainBound` along with a
+    position/positions must not allow for negative values (i.e. its support must
+    end before 0). Keep in mind that a normal distribution, for
+    example, has support from -∞ to ∞, so it is a poor choice here.
 
-## Plotting Monte-Carlo draws
+## [Plotting Monte-Carlo draws](@id plot_mc_draws)
 
 To verify that the integration windows and derived integrals are sensible, it is
 a good idea to plot a few draws and integrals before running the full
-Monte-Carlo algorithm. We can do so by passing a spectrum, an array of bounds,
-and a noise model to the plot function:
+Monte-Carlo algorithm. We can do so by passing an `UncertainCurve` and an array
+of `UncertainBound`s to the plot function:
 
 ```@example FTIR
-plot(uncertain_spectrum, [wb_1, wb_2]; draws=3, size=(400, 500))
+plot(uncertain_spectrum, [wb_1, wb_2]; size=(400, 500))
 ```
 
 We can see from the plot that our estimate for the width of the peaks was
 perhaps a bit too small, so we retry:
 
 ```@example FTIR
-width_distribution = scale_shift_beta(2, 2, 3, 4)
+width_distribution = scale_shift_beta(2, 2, 3, 4) # width will fall in the range [3, 4]
 wb_1, wb_2 = UncertainBound(positions, width_distribution, uncertain_spectrum)
 
-plot(uncertain_spectrum, [wb_1, wb_2]; draws=3, size=(400, 500))
+plot(uncertain_spectrum, [wb_1, wb_2]; size=(400, 500))
 ```
 
 ## Running the integration algorithm
 
-The integration is performed with the function `mc_integrate`. We have to pass
-in the uncertain spectrum and integration bounds:
+The integration is performed with the function [`mc_integrate`](@ref). We have
+to pass in the uncertain spectrum and integration bounds. Since we pass in two
+integration bounds, we retrieve two areas:
 
 ```@example FTIR
 area_1, area_2 = mc_integrate(uncertain_spectrum, [wb_1, wb_2])
 ```
 
-Now we can look at the histogram of the integrals, or of the peak area ration:
+We can look at the histogram of the integrals:
 
 ```@example FTIR
 histogram([area_1.particles, area_2.particles]; label=["band area 1" "band area 2"])
 ```
+
+Or of the peak area ratio, simply by calculating with the retrieved areas:
 
 ```@example FTIR
 ratio = area_1 / area_2
@@ -326,24 +348,35 @@ We can use some basic statistical functions to characterize the result:
 ```@example FTIR
 using StatsBase: mean, std, percentile
 
-mean(ratio) |> println
+mean(ratio)
 ```
 
 ```@example FTIR
-std(ratio) |> println
+std(ratio)
 ```
 
 ```@example FTIR
-percentile(ratio, 2.5) |> println
+percentile(ratio, 2.5)
 ```
 
 ```@example FTIR
-percentile(ratio, 50) |> println
+percentile(ratio, 50)
 ```
 
 ```@example FTIR
-percentile(ratio, 97.5) |> println
+percentile(ratio, 97.5)
 ```
 
 We find that, considering the noise and the uncertainty in the integration
 bounds, we end up with a 95% uncertainty interval of roughly 0.4 to 0.7.
+
+!!! info "Sensitivity analysis"
+    It is perfectly valid to create several `UncertainBound`s for *one and the
+    same band* and feed them into `mc_integrate()`, e.g. to perform a sensitivity
+    analysis on how much the result depends on the kind and parameters of the
+    bounds.
+
+You find more usage examples on the next page. In particular, check out the
+[error propagation example](@ref example_propagation) to see how to proceed with
+uncertainty calculations with the retrieved areas using
+[`MonteCarloMeasurements.jl`](https://github.com/baggepinnen/MonteCarloMeasurements.jl).

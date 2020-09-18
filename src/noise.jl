@@ -12,7 +12,7 @@ detrend(c::Curve, poly_order) = Curve(c.x, detrend(c.x, c.y, poly_order))
 
 Curve holding a noise sample. At minimum, a constant offset
 is removed from the noise sample upon construction.
-If provided, a ploynomial of order `n` is subtracted.
+If provided, a polynomial of order `n` is subtracted.
 
 # Fields
 - `x::Vector{Float64}` : x-grid
@@ -204,7 +204,7 @@ end
 """
     add_noise(c::Curve, nm::AbstractNoiseModel, N::Int=10_000)
 
-Add noise from noise model to curve, retrieve UncertainCurve with `N` samples.
+Add noise from noise model to curve, retrieve `UncertainCurve` with `N` samples.
 """
 function add_noise(c::Curve, nm::GaussianNoiseModel, N::Int=10_000)
     return UncertainCurve(c.x, Particles(N, MvNormal(c.y, nm.σ)))
