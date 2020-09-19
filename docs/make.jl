@@ -1,7 +1,3 @@
-using Pkg
-
-Pkg.activate(@__DIR__) # activate the docs environment
-
 using Documenter
 using NoisySignalIntegration
 
