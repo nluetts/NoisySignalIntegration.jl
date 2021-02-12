@@ -304,12 +304,12 @@ Alternatives are a box plot:
 ```@example propagation
 using StatsPlots: boxplot
 
-boxplot(
-    ["B:A" "C:A" "D:A"],
-    [R_BA.particles R_CA.particles R_DA.particles],
-    ylabel="abundance ratio",
-    label=nothing
-)
+let
+    rep(str) = repeat([str], length(R_BA.particles)) 
+    x = [rep("B:A") rep("C:A") rep("D:A")]
+    y = [R_BA.particles R_CA.particles R_DA.particles]
+    boxplot(x, y, ylabel="abundance ratio", label=nothing)
+end
 ```
 
 Or a violin plot:
@@ -317,10 +317,10 @@ Or a violin plot:
 ```@example propagation
 using StatsPlots: violin
 
-violin(
-    ["B:A" "C:A" "D:A"],
-    [R_BA.particles R_CA.particles R_DA.particles],
-    ylabel="abundance ratio",
-    label=nothing
-)
+let
+    rep(str) = repeat([str], length(R_BA.particles)) 
+    x = [rep("B:A") rep("C:A") rep("D:A")]
+    y = [R_BA.particles R_CA.particles R_DA.particles]
+    violin(x, y, ylabel="abundance ratio", label=nothing)
+end
 ```

@@ -24,4 +24,4 @@ jobs:
           GKSwstype: 100
           GKS_ENCODING: utf8
           DOCUMENTER_KEY: ${{ secrets.DOCUMENTER_KEY }} # For authentication with SSH deploy key
-        run: julia --project=docs/ docs/make.jl
+        run: julia --project=docs/ docs/make_deploy.jl

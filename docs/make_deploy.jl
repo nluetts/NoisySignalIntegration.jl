@@ -17,3 +17,7 @@ makedocs(
     ],
     highlightsig=true
 )
+
+deploydocs(
+    repo = "github.com/nluetts/NoisySignalIntegration.jl.git",
+)

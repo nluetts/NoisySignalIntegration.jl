@@ -157,8 +157,9 @@ end
     mean_uc = mean(uc)
     
     for i ∈ 0:draws
-        for b in bnds
+        for (j, b) in enumerate(bnds)
             @series begin
+                fillcolor := j % 2 == 1 ? :red : :orange
                 subplot := i + 1
                 subtract_baseline := subtract_baseline
                 if i == 0
