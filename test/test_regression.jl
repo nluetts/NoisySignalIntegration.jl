@@ -70,7 +70,7 @@ end
     r = percentile(result, 2.5)
     @test abs(r - p25_pr)/r ≈ 0.0739333525 rtol = 1e-7 # worst disagreement (but for smallest number, 0.24 vs. 0.22 is not that bad ...)
     r = percentile(result, 50)
-    @test abs(r - p50_pr)/r ≈ 0.000140994154 rtol = 1e-7 # the median is very well reproduced
+    @test abs(r - p50_pr)/r ≈ 0.000140994154 rtol = 1e-6 # the median is very well reproduced
     r = percentile(result, 97.5)
     @test abs(r - p975_pr)/r ≈ 0.04008646654 rtol = 1e-7
 end
