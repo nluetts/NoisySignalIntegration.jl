@@ -38,3 +38,19 @@ end
     @test mean(area) == 0.0
     @test std(area) == 0.0
 end
+
+@testset "integrate using Simpsons rule from external package" begin
+
+    using NumericalIntegration: integrate, SimpsonEven
+    
+    function simps(x, y, a, b; subtract_baseline=true)
+        idx = [(xᵢ >= a) & (xᵢ <= b) for xᵢ in x]
+        return integrate(x[idx], y[idx], SimpsonEven())
+    end
+    c = crop(get_test_spectrum(1), 10, 40)
+    uc = add_noise(c, MvGaussianNoiseModel(0.1, 0.1, 0.5))
+    ub = UncertainBound(15.0, scale_shift_beta(2.0, 2.0, 3.0, 4.0), uc)
+    area_s = mc_integrate(uc, ub; intfun=simps)
+    @test mean(area_s) ≈ 5.6868358 atol = 1e-7
+    @test std(area_s) ≈ 0.32897085 atol = 1e-7
+end
