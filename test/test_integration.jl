@@ -55,9 +55,29 @@ end
     @test std(area_s) ≈ 0.32897085 atol = 1e-7
 end
 
-@testset "keywords error" begin
+@testset "error if local_baseline and subtract_baseline true" begin
     c = NoisySignalIntegration.testdata_1()
     uc = add_noise(c, MvGaussianNoiseModel(0.1, 0.1, 0.5))
     ub = UncertainBound(15.0, scale_shift_beta(2.0, 2.0, 3.0, 4.0), uc)
     @test_throws ErrorException area = mc_integrate(uc, ub; local_baseline=true, subtract_baseline=true)
+end
+
+
+@testset "test _local_baseline" begin
+    xs = 1.0:10.0 |> collect
+    b = UncertainBound(Uniform(1.5, 2.5), Uniform(4.5, 6.5))
+    @testset "test _local_baseline with linear dataset" begin
+        ys = xs
+        xₗ, xᵣ, yₗ, yᵣ = nsi._local_baseline(xs, ys, 1.75, 5.25, b)
+        yyₗ = nsi.lininterp(1.75, xs, ys)
+        yyᵣ = nsi.lininterp(5.25, xs, ys)
+        @test yyₗ == yₗ
+        @test yyᵣ == yᵣ
+    end
+    @testset "test _local_baseline with parabolic dataset" begin
+        ys = xs.^2
+        xₗ, xᵣ, yₗ, yᵣ = nsi._local_baseline(xs, ys, 2.25, 5.25, b)
+        @test yₗ ≈ 6.1329 atol=1e-4  # results derived by doing computation by hand in Numpy
+        @test yᵣ ≈ 28.8471 atol=1e-4
+    end
 end
