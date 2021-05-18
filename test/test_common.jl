@@ -132,3 +132,15 @@ end
     @test_throws ArgumentError (@samples 1 1 + 1)
     @test_throws ArgumentError (@samples 1 1 + 1 + 1)
 end
+
+@testset "lininterp" begin
+    xs = 0:0.5:10 |> collect
+    ys = 0:0.5:10 |> collect
+    @test NoisySignalIntegration.lininterp(2.7, xs, ys) == 2.7
+    ys = ys.^2
+    @test NoisySignalIntegration.lininterp(2.7, xs, ys) ≈ 7.35
+    @test NoisySignalIntegration.lininterp(2.5, xs, ys) == 6.25
+    @test NoisySignalIntegration.lininterp(10.0, xs, ys) == 100.0
+    @test_throws ErrorException NoisySignalIntegration.lininterp(0.0, xs, ys)
+    @test_throws ErrorException NoisySignalIntegration.lininterp(10.1, xs, ys)
+end

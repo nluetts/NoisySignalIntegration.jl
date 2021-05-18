@@ -45,6 +45,12 @@ end
     return y
 end
 
+"""Linearly interpolate y-value at position `x` for x,y data; `xs` has to be sorted."""
+@inline function lininterp(x::T, xs::Vector{T}, ys::Vector{S}) where {T <: Number, S <: Number}
+    i = searchsortedfirst(xs, x)
+    (i < 2 || i > length(xs)) && throw(error("x is outside the support: $x ∉ ($(minimum(xs)), $(maximum(xs))]."))
+    return lininterp(x, xs[i-1], xs[i], ys[i-1], ys[i])
+end
 
 """
     trapz(x::AbstractArray{T}, y::AbstractArray{T}, left, right; subtract_baseline=true) where {T<:AbstractFloat}

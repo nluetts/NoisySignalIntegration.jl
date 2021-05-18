@@ -1,6 +1,6 @@
 ## Run this file manually to check that plottings works as expected
 
-using Revise
+#using Revise
 
 ##
 using NoisySignalIntegration

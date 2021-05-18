@@ -54,3 +54,10 @@ end
     @test mean(area_s) ≈ 5.6868358 atol = 1e-7
     @test std(area_s) ≈ 0.32897085 atol = 1e-7
 end
+
+@testset "keeywords error" begin
+    c = NoisySignalIntegration.testdata_1()
+    uc = add_noise(c, MvGaussianNoiseModel(0.1, 0.1, 0.5))
+    ub = UncertainBound(15.0, scale_shift_beta(2.0, 2.0, 3.0, 4.0), uc)
+    @test_throws ErrorException area = mc_integrate(uc, ub; local_baseline=true, subtract_baseline=true)
+end

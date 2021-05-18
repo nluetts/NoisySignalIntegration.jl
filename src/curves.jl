@@ -30,6 +30,8 @@ Base.:(*)(y, c::AbstractCurve) = typeof(c)(c.x, y .* c.y)
 Base.:(/)(y, c::AbstractCurve) = typeof(c)(c.x, y ./ c.y)
 Base.vcat(c0::AbstractCurve, c1::AbstractCurve) = typeof(c0)(vcat(c0.x, c1.x), vcat(c0.y, c1.y))
 
+stitch(curves...) = reduce(vcat, curves)
+
 function Base.sort(c::T) where {T <: AbstractCurve}
     x, y = c.x, c.y
     ind = sortperm(x)
