@@ -60,34 +60,30 @@ end
             f, F = t
             ref_1 = F(r) - F(l)
             ref_2 = ref_1 - 1/2*(f(r) + f(l))*(r - l) # 1/2*(f(r) + f(l))*(r - l) term: subtracting baseline
-            @test nsi.trapz(x, f.(x), l, r, subtract_baseline=false) ≈ ref_1 rtol=1e-7
-            @test nsi.trapz(x, f.(x), l, r) ≈ ref_2 rtol=1e-7
+            @test nsi.trapz(x, f.(x), l, r) ≈ ref_1 rtol=1e-7
         end
     end
 
     begin
         x = collect(Float64, 1:10)
         y = collect(Float64, 1:10)
-        @test nsi.trapz(x, y, 1, 3, subtract_baseline=false) == 4.0
-        @test nsi.trapz(x, y, 1.1, 2.1, subtract_baseline=false) ≈ 1.6
-        @test nsi.trapz(x, y, 1.1, 1.2, subtract_baseline=false) ≈ 1.1*0.1 + 0.1*0.1*0.5
-        @test nsi.trapz(x, y, 1.0, 1.1, subtract_baseline=false) ≈ 0.1 + 0.1*0.1*0.5
-        @test nsi.trapz(x, y, 3.9, 4.0, subtract_baseline=false) ≈ 3.9*0.1 + 0.1*0.1*0.5
-        @test nsi.trapz(x, y, 0, 10) == 0.0
-        @test nsi.trapz(x, y, 1, 11) == 0.0
-        @test nsi.trapz(x, y, 0, 11) == 0.0
+        @test nsi.trapz(x, y, 1, 3) == 4.0
+        @test nsi.trapz(x, y, 1.1, 2.1) ≈ 1.6
+        @test nsi.trapz(x, y, 1.1, 1.2) ≈ 1.1*0.1 + 0.1*0.1*0.5
+        @test nsi.trapz(x, y, 1.0, 1.1) ≈ 0.1 + 0.1*0.1*0.5
+        @test nsi.trapz(x, y, 3.9, 4.0) ≈ 3.9*0.1 + 0.1*0.1*0.5
     end
 
     begin
         x = [1, 2, 3, 4, 6, 7.0]
         y = [1, 2, 4, 2.5, 3, 2]
-        @test nsi.trapz(x, y, 1, 7, subtract_baseline=false) == 15.75
-        @test nsi.trapz(x, y, 0, 10, subtract_baseline=false) == 15.75
-        @test nsi.trapz(x, y, 1, 2, subtract_baseline=false) == 1.5
-        @test nsi.trapz(x, y, 3, 4, subtract_baseline=false) == 3.25
-        @test nsi.trapz(x, y, 1, 6, subtract_baseline=false) == 13.25
-        @test nsi.trapz(x, y, 6, 1, subtract_baseline=false) == 13.25
-        @test nsi.trapz(x, y, 1.5, 7, subtract_baseline=false) == 15.125
+        @test nsi.trapz(x, y, 1, 7) == 15.75
+        @test nsi.trapz(x, y, 0, 10) == 15.75
+        @test nsi.trapz(x, y, 1, 2) == 1.5
+        @test nsi.trapz(x, y, 3, 4) == 3.25
+        @test nsi.trapz(x, y, 1, 6) == 13.25
+        @test nsi.trapz(x, y, 6, 1) == 13.25
+        @test nsi.trapz(x, y, 1.5, 7) == 15.125
     end
 end
 

@@ -1,5 +1,11 @@
 # Defines the UncertainBound type to handle uncertain untegration start and end points
 
+
+# Define which quantiles are stored in UncertainBound objects
+const BOUND_QUANTILES = 0.1:0.2:0.9 |> collect
+const IDX_BOUND_MEDIAN = 3 # the median is at index 3
+
+
 """
     UncertainBound{T, N}
 
@@ -84,9 +90,24 @@ julia> ubs = UncertainBound([3., 7.], scale_shift_beta(2, 2, 1.3, 1.5), uc)
 struct UncertainBound{T, N}
     left::Particles{T, N}
     right::Particles{T, N}
+    # quantiles for local baseline subtraction and plotting
+    _left_quantiles
+    _right_quantiles
 end
 
+function Base.show(io::IO, c::UncertainBound{T, N}) where {T, N}
+    print(io, "UncertainBound{$T, $N}(start = $(c.left), end = $(c.right))")
+end
+
+
 # Constructors
+
+# Base constructor that injects quantiles
+function UncertainBound(left::Particles{T, N}, right::Particles{T, N}) where {T, N}
+    qs = BOUND_QUANTILES
+    lqs, rqs = [[quantile(lr, q) for q in qs] for lr in (left, right)]
+    return UncertainBound{T, N}(left, right, lqs, rqs)
+end
 
 
 # Create a left/right bound

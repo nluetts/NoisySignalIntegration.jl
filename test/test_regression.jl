@@ -35,7 +35,7 @@ end
     nm = fit_noise(noise)
     uspec = add_noise(spec, nm)
     bnds = UncertainBound([3620.0, 3639.0], scale_shift_beta(2, 2, 4.75, 5.25), uspec)
-    areas = mc_integrate(uspec, bnds)
+    areas = mc_integrate(uspec, bnds, subtract_baseline=true)
     result = areas[2]/areas[1]
     # compare percentiles to previous results
     prev_result = [3.79e-01, 5.92e-01, 8.60e-01] # 2.5, 50 and 97.5 percentiles from https://doi.org/10.1039/C9CP00435A
@@ -59,7 +59,7 @@ end
     nm = fit_noise(noise; α_guess=2.5e-6, λ_guess=1.0)
     uspec = add_noise(spec, nm)
     bnds = UncertainBound([2671.0, 2685.0], scale_shift_beta(2, 2, 4.75, 5.25), uspec)
-    areas = mc_integrate(uspec, bnds)
+    areas = mc_integrate(uspec, bnds, subtract_baseline=true)
     result = areas[2]/areas[1]
     # compare percentiles to previous results
     p25_pr = 2.24e-01 # previous 2.5 percentile ...

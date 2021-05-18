@@ -53,13 +53,9 @@ end
 end
 
 """
-    trapz(x::AbstractArray{T}, y::AbstractArray{T}, left, right; subtract_baseline=true) where {T<:AbstractFloat}
+    trapz(x::AbstractArray{T}, y::AbstractArray{T}, left, right) where {T<:AbstractFloat}
 
 Integrate vector `y` in interval [`left`, `right`] using trapezoidal integration.
-
-# Keyword Arguments
-
-`subtract_baseline`: If `true`, subtract a linear baseline defined by data points at `x = left` and `x = right`.
 
 # Notes
 
@@ -79,27 +75,23 @@ julia> x = collect(Float64, 0:10);
 julia> y = ones(Float64, 11);
 
 
-julia> trapz(x, y, 1, 3, subtract_baseline=false)
+julia> trapz(x, y, 1, 3)
 2.0
 
 
-julia> trapz(x, y, 1, 3) # subtract_baseline is true by default
-0.0
-
-
-julia> trapz(x, y, -1, 11, subtract_baseline=false) # at most, we can integrate the available x-range, 0 to 10
+julia> trapz(x, y, -1, 11) # at most, we can integrate the available x-range, 0 to 10
 10.0
 
 
-julia> trapz(x, y, -10, 20, subtract_baseline=false)
+julia> trapz(x, y, -10, 20)
 10.0
 
 
-julia> trapz(x, y, 1.1, 1.3, subtract_baseline=false) ≈ 0.2 # if we integrate "between" the grid, data points are interpolated
+julia> trapz(x, y, 1.1, 1.3) ≈ 0.2 # if we integrate "between" the grid, data points are interpolated
 true
 ```
 """
-function trapz(x::AbstractArray{T}, y::AbstractArray{T}, left::T, right::T; subtract_baseline=true) where {T<:AbstractFloat}
+function trapz(x::AbstractArray{T}, y::AbstractArray{T}, left::T, right::T) where {T<:AbstractFloat}
 
     left, right = left < right ? (left, right) : (right, left)
 
@@ -152,22 +144,13 @@ function trapz(x::AbstractArray{T}, y::AbstractArray{T}, left::T, right::T; subt
         j += 1
     end
 
-    if subtract_baseline
-        if yr === nothing
-            # this case means that right > x[end]
-            right = x[N]
-            yr = y[N]
-        end
-        return A - singletrapz(left, right, yl, yr)
-    else
-        return A
-    end
+    return A
 end
 
-function trapz(x::AbstractArray{T}, y::AbstractArray{T}, left, right; subtract_baseline=true) where {T<:AbstractFloat}
+function trapz(x::AbstractArray{T}, y::AbstractArray{T}, left, right) where {T<:AbstractFloat}
     left = T(left)
     right = T(right)
-    return trapz(x, y, left, right, subtract_baseline=subtract_baseline)
+    return trapz(x, y, left, right)
 end
 
 

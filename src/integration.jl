@@ -1,3 +1,17 @@
+function _local_baseline(x, y, l, r, b::UncertainBound)
+    ŷₗ = mean(lininterp(q, x, y) for q in b._left_quantiles)
+    ŷᵣ = mean(lininterp(q, x, y) for q in b._right_quantiles)
+    x̂ₗ = b._left_quantiles[IDX_BOUND_MEDIAN]
+    x̂ᵣ = b._right_quantiles[IDX_BOUND_MEDIAN]
+    yl = lininterp(l, x̂ₗ, x̂ᵣ, ŷₗ, ŷᵣ)
+    yr = lininterp(r, x̂ₗ, x̂ᵣ, ŷₗ, ŷᵣ)
+    return l, r, yl, yr
+end
+
+
+_endpoint_to_endpoint_baseline(x, y, l, r) = (l, r, lininterp(l, x, y), lininterp(r, x, y))
+
+
 """
     mc_integrate(uc::UncertainCurve{T, N}, bnds::Vector{UncertainBound{T, M}}; intfun=trapz)
     mc_integrate(uc::UncertainCurve{T, N}, bnds::UncertainBound{T, M}; intfun=trapz)
@@ -21,16 +35,8 @@ function mc_integrate(uc::UncertainCurve{T, N}, bnds::Vector{UncertainBound{T, M
 
     M != N && error("Samples sizes incompatible")
     println(local_baseline, subtract_baseline)
-    subtract_baseline && @warn("subtract_baseline is deprecated, use local_baseline instead.")
-    (subtract_baseline && local_baseline) && throw(error("local_baseline and subtract_baseline cannot both be true."))
-
-    if local_baseline
-        bound_quantiles = let
-            qs = 0.1:0.2:0.9 |> collect
-            fq(bnd) = [[quantile(bnd.left, q), quantile(bnd.right, q)] for q in qs]
-            [fq(b) for b in bnds]
-        end
-    end
+    subtract_baseline && @warn("subtract_baseline keyword argument is deprecated, use local_baseline instead.")
+    (subtract_baseline && local_baseline) && error("local_baseline and subtract_baseline cannot both be true.") |> throw
 
     areas = Array{T}(undef, N, length(bnds))
     for i ∈ 1:N
@@ -39,16 +45,12 @@ function mc_integrate(uc::UncertainCurve{T, N}, bnds::Vector{UncertainBound{T, M
         for (j, b) in enumerate(bnds)
             l, r = get_draw(i, b)
             x, y = uc.x, cᵢ.y
-            areas[i, j] = intfun(x, y, l, r; subtract_baseline=subtract_baseline)
+            areas[i, j] = intfun(x, y, l, r)
             if local_baseline
-                ŷₗ = mean(lininterp(qⱼ[1], x, y) for qⱼ in bound_quantiles[j])
-                ŷᵣ = mean(lininterp(qⱼ[2], x, y) for qⱼ in bound_quantiles[j])
-                x̂ₗ = bound_quantiles[j][3][1]
-                x̂ᵣ = bound_quantiles[j][3][2]
-                yl = lininterp(l, x̂ₗ, x̂ₗ, ŷₗ, ŷᵣ)
-                yr = lininterp(r, x̂ₗ, x̂ₗ, ŷₗ, ŷᵣ)
-                println(ŷₗ, ŷᵣ, yl, yr)
-                areas[i, j] -= singletrapz(l, r, yl, yr)
+                areas[i, j] -= singletrapz(_local_baseline(x, y, l, r, b)...)
+            end
+            if subtract_baseline
+                areas[i, j] -= singletrapz(_endpoint_to_endpoint_baseline(x, y, l, r)...)
             end
         end
     end

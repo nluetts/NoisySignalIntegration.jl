@@ -18,8 +18,8 @@ include("common.jl")
 include("curves.jl")
 include("bounds.jl")
 include("noise.jl")
-include("plotting.jl")
 include("integration.jl")
+include("plotting.jl")
 include("testdata.jl")
 
 export

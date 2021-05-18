@@ -13,7 +13,7 @@ end
         c = crop(get_test_spectrum(1), 10, 40)
         uc = add_noise(c, MvGaussianNoiseModel(0.1, 0.1, 0.5))
         ub = UncertainBound(15.0, scale_shift_beta(2.0, 2.0, 3.0, 4.0), uc)
-        area = mc_integrate(uc, ub)
+        area = mc_integrate(uc, ub, subtract_baseline=true)
         @test mean(area) ≈ 1.808961690 atol = 1e-8
         @test std(area) ≈ 0.2488841198 atol = 1e-8
     end
@@ -21,7 +21,7 @@ end
         c = crop(get_test_spectrum(1), 10, 40)
         uc = add_noise(c, MvGaussianNoiseModel(0.1, 0.1, 0.5))
         ubs = UncertainBound([15., 30.], scale_shift_beta(2.0, 2.0, 3.0, 4.0), uc)
-        area1, area2 = mc_integrate(uc, ubs)
+        area1, area2 = mc_integrate(uc, ubs, subtract_baseline=true)
         @test mean(area1) ≈ 1.808961690 atol = 1e-8
         @test std(area1) ≈ 0.2488841198 atol = 1e-8
         @test mean(area2) ≈ 3.442573414 atol = 1e-8
@@ -55,7 +55,7 @@ end
     @test std(area_s) ≈ 0.32897085 atol = 1e-7
 end
 
-@testset "keeywords error" begin
+@testset "keywords error" begin
     c = NoisySignalIntegration.testdata_1()
     uc = add_noise(c, MvGaussianNoiseModel(0.1, 0.1, 0.5))
     ub = UncertainBound(15.0, scale_shift_beta(2.0, 2.0, 3.0, 4.0), uc)

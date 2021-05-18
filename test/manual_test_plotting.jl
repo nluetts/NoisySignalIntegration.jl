@@ -1,6 +1,6 @@
 ## Run this file manually to check that plottings works as expected
 
-#using Revise
+using Revise
 
 ##
 using NoisySignalIntegration
@@ -32,12 +32,12 @@ nm = fit_noise(noise)
 unc_spec = add_noise(spec, nm, SAMPLES)
 
 ubnd1 = UncertainBound(
-    Particles(SAMPLES, scale_shift_beta(2.0, 2.0, 13.0, 13.5)),
-    Particles(SAMPLES, scale_shift_beta(2.0, 2.0, 16.5, 17.0))
+    Particles(SAMPLES, scale_shift_beta(2.0, 2.0, 10.0, 11.0)),
+    Particles(SAMPLES, scale_shift_beta(2.0, 2.0, 19.0, 20.0))
 )
 ubnd2 = UncertainBound(
-    Particles(SAMPLES, scale_shift_beta(2.0, 2.0, 28.0, 28.5)),
-    Particles(SAMPLES, scale_shift_beta(2.0, 2.0, 31.5, 32.0))
+    Particles(SAMPLES, scale_shift_beta(2.0, 2.0, 25.0, 26)),
+    Particles(SAMPLES, scale_shift_beta(2.0, 2.0, 33.0, 34.0))
 )
 
 ubnd3 = UncertainBound(

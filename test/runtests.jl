@@ -9,7 +9,7 @@ using Test
 const NP = MonteCarloMeasurements.DEFAULT_NUM_PARTICLES
 const nsi = NoisySignalIntegration
 
-if true
+if false
     include("tmp.jl")
 else
     include("test_common.jl")
