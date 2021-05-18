@@ -1,15 +1,15 @@
-function _local_baseline(x, y, l, r, b::UncertainBound)
-    ŷₗ = mean(lininterp(q, x, y) for q in b._left_quantiles)
-    ŷᵣ = mean(lininterp(q, x, y) for q in b._right_quantiles)
+function _local_baseline(xs, ys, xₗ, xᵣ, b::UncertainBound)
+    ŷₗ = mean(lininterp(q, xs, ys) for q in b._left_quantiles)
+    ŷᵣ = mean(lininterp(q, xs, ys) for q in b._right_quantiles)
     x̂ₗ = b._left_quantiles[IDX_BOUND_MEDIAN]
     x̂ᵣ = b._right_quantiles[IDX_BOUND_MEDIAN]
-    yl = lininterp(l, x̂ₗ, x̂ᵣ, ŷₗ, ŷᵣ)
-    yr = lininterp(r, x̂ₗ, x̂ᵣ, ŷₗ, ŷᵣ)
-    return l, r, yl, yr
+    yₗ = lininterp(xₗ, x̂ₗ, x̂ᵣ, ŷₗ, ŷᵣ)
+    yᵣ = lininterp(xᵣ, x̂ₗ, x̂ᵣ, ŷₗ, ŷᵣ)
+    return xₗ, xᵣ, yₗ, yᵣ
 end
 
 
-_endpoint_to_endpoint_baseline(x, y, l, r) = (l, r, lininterp(l, x, y), lininterp(r, x, y))
+_endpoint_to_endpoint_baseline(xs, ys, xₗ, xᵣ) = (xₗ, xᵣ, lininterp(xₗ, xs, ys), lininterp(xᵣ, xs, ys))
 
 
 """
@@ -34,7 +34,6 @@ If true, for each draw a local baseline defined by the integration window start 
 function mc_integrate(uc::UncertainCurve{T, N}, bnds::Vector{UncertainBound{T, M}}; intfun=trapz, subtract_baseline=false, local_baseline=false) where {T, M, N}
 
     M != N && error("Samples sizes incompatible")
-    println(local_baseline, subtract_baseline)
     subtract_baseline && @warn("subtract_baseline keyword argument is deprecated, use local_baseline instead.")
     (subtract_baseline && local_baseline) && error("local_baseline and subtract_baseline cannot both be true.") |> throw
 
@@ -43,14 +42,14 @@ function mc_integrate(uc::UncertainCurve{T, N}, bnds::Vector{UncertainBound{T, M
         i % 1000 == 0 && print("Integrating draw $i/$N \r")
         cᵢ = get_draw(i, uc)
         for (j, b) in enumerate(bnds)
-            l, r = get_draw(i, b)
-            x, y = uc.x, cᵢ.y
-            areas[i, j] = intfun(x, y, l, r)
+            xₗ, xᵣ = get_draw(i, b)
+            xs, ys = uc.x, cᵢ.y
+            areas[i, j] = intfun(xs, ys, xₗ, xᵣ)
             if local_baseline
-                areas[i, j] -= singletrapz(_local_baseline(x, y, l, r, b)...)
+                areas[i, j] -= singletrapz(_local_baseline(xs, ys, xₗ, xᵣ, b)...)
             end
             if subtract_baseline
-                areas[i, j] -= singletrapz(_endpoint_to_endpoint_baseline(x, y, l, r)...)
+                areas[i, j] -= singletrapz(_endpoint_to_endpoint_baseline(xs, ys, xₗ, xᵣ)...)
             end
         end
     end

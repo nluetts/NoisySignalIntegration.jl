@@ -2,64 +2,39 @@ const PRIMARY_COLOR = :blue
 const SECONDARY_COLOR = :red
 
 
-function get_left_right_points(x::AbstractArray{T}, y::AbstractArray{T}, left::T, right::T; subtract_baseline=true) where {T<:AbstractFloat}
-
-    # this function is required to plot integration areas
-
-    left, right = left < right ? (left, right) : (right, left)
-
-    N = length(x)
-    N != length(y) && throw(ArgumentError("Data arrays `x` and `y` must have the same length."))
-    N < 2 && throw(ArgumentError("`x`and `y` must each hold at least two elements."))
+# this function is required to plot integration areas
+function get_left_right_points(
+    xs::AbstractArray{T},
+    ys::AbstractArray{T},
+    xₗ::T,
+    xᵣ::T,
+    b::UncertainBound
+    ;
+    baseline_handeling=nothing
+) where {T<:AbstractFloat}
     
-    l =  r = xl = xr = yl = yr = nothing
-    j = 2
+    xₗ, xᵣ = xₗ < xᵣ ? (xₗ, xᵣ) : (xᵣ, xₗ)
+    
+    i = searchsortedfirst(xs, xₗ)
+    j = searchsortedfirst(xs, xᵣ)
+    any(
+        [
+            i < 2,
+            i > length(xs) - 1,
+            j < 3,
+            j > length(xs)
+        ]
+    ) && throw(error("At least one integration bound is outside the support region ($(minimum(x)), $(maximum(x)))."))
 
-    while j <= N
 
-        x₀ = x[j-1]
-        x₁ = x[j]
-        y₀ = y[j-1]
-        y₁ = y[j]
-        
-        if x₁ <= left
-            j += 1
-            continue
-        elseif yl === nothing
-            # this will only run once, when we enter the integration window
-            if x₀ < left
-                xl = left
-                yl = lininterp(left, x₀, x₁, y₀, y₁)
-                l = j - 1
-            elseif x₀ == left
-                xl = left
-                yl = y₀
-                l = j
-            else
-                # this case means that `left` <= x[1]
-                xl = x₀
-                yl = y₀
-                l = 0
-            end
-        end
-        
-        if x₁ >= right
-            # we move out of the integration window
-            yr = x₁ == right ? y₁ : lininterp(right, x₀, x₁, y₀, y₁)
-            xr = right
-            r = j + 1
-            break
-        end
-        j += 1
+    if baseline_handeling == "local"
+        _, _, yₗ, yᵣ = _local_baseline(xs, ys, xₗ, xᵣ, b)
+    else
+        # bound `b` is unused in this case
+        _, _, yₗ, yᵣ = _endpoint_to_endpoint_baseline(xs, ys, xₗ, xᵣ)
     end
 
-    if yr === nothing
-        # this case means that right > x[end]
-        xr = x[N]
-        yr = y[N]
-        r = N + 1
-    end
-    return l, r, xl, xr, yl, yr
+    return i, j, xₗ, xᵣ, yₗ, yᵣ
 end
 
 @recipe function plot_recipe(crv::AbstractCurve)
@@ -97,43 +72,54 @@ end
 end
  
 
-@recipe function plot_recipe(crv::Curve{T}, left::T, right::T; subtract_baseline=true) where T
+@recipe function plot_recipe(crv::Curve{T}, left::T, right::T; subtract_baseline=false, local_baseline=false, bound=nothing) where T
     fillrange := 0
     fillalpha --> 0.5
     fillcolor --> :orange
     linewidth --> 0
     label     --> nothing
     
+    (local_baseline && bound == nothing) && error("You have to provide a bound if local_baseline == true.") |> throw
+    (subtract_baseline && local_baseline) && error("local_baseline and subtract_baseline cannot both be true.") |> throw
+
     left = T(left)
     right = T(right)
     
-    l, r, xl, xr, yl, yr = get_left_right_points(crv.x, crv.y, left, right)
     if subtract_baseline
-        x = [xl; crv.x[l+1:r-1]; xr; xl]
-        y = [yl; crv.y[l+1:r-1]; yr; yl]
+        bh = "end-to-end"
+    elseif local_baseline
+        bh = "local"
     else
-        x = [xl; crv.x[l+1:r-1]; xr; xr; xl]
-        y = [yl; crv.y[l+1:r-1]; yr; 0;  0 ]
+        bh = nothing
     end
+    
+    l, r, xl, xr, yl, yr = get_left_right_points(crv.x, crv.y, left, right, bound; baseline_handeling=bh)
+    x = [xl; crv.x[l+1:r-1]; xr; xl]
+    if !(local_baseline || subtract_baseline)
+        y = [yl; crv.y[l+1:r-1]; zero(T); zero(T)]
+    else
+        y = [yl; crv.y[l+1:r-1]; yr; yl]
+    end
+    
     return x, y
 end
 
 
-@recipe function plot_recipe(crv::Curve{T}, bnds::Vector{UncertainBound{T, N}}, draw::Int; subtract_baseline=true) where {T, N}
+@recipe function plot_recipe(crv::Curve{T}, bnds::Vector{UncertainBound{T, N}}, draw::Int) where {T, N}
     @series begin
         crv
     end
     for b ∈ bnds
         @series begin
-            subtract_baseline := subtract_baseline
             left, right = get_draw(draw, b)
+            bound := b
             crv, left, right
         end
     end
 end
 
 
-@recipe function plot_recipe(crv::Curve{T}, bnd::UncertainBound{T, N}, draw::Int; subtract_baseline=true) where {T, N}
+@recipe function plot_recipe(crv::Curve{T}, bnd::UncertainBound{T, N}, draw::Int) where {T, N}
     @series begin
         crv, [bnd], draw
     end
@@ -161,7 +147,7 @@ end
             @series begin
                 fillcolor := j % 2 == 1 ? :red : :orange
                 subplot := i + 1
-                subtract_baseline := subtract_baseline
+                bound := b
                 if i == 0
                     mean_uc, mean(b)...
                 else
@@ -190,11 +176,9 @@ end
     uc::UncertainCurve{T, N},
     bnd::UncertainBound{T, N}
     ;
-    draws=3,
-    subtract_baseline=true
+    draws=3
 ) where {T, N}
     draws := draws
-    subtract_baseline := subtract_baseline
     uc, [bnd]
 end
 
