@@ -80,4 +80,52 @@ end
         @test yₗ ≈ 6.1329 atol=1e-4  # results derived by doing computation by hand in Numpy
         @test yᵣ ≈ 28.8471 atol=1e-4
     end
+    @testset "test _local_baseline with normal and uniform distribution on noise" begin
+        noise = [
+            1 1.51
+            2 1.41
+            3 1.2
+            4 0.88
+            5 0.5
+            6 0.09
+            7 -0.32
+            8 -0.67
+            9 -0.94
+            10 -1.09
+            11 -1.12
+            12 -1.04
+            13 -0.86
+            14 -0.63
+            15 -0.39
+            16 -0.18
+            17 -0.04
+            18 0.02
+            19 -0.01
+            20 -0.12
+            21 -0.25
+            22 -0.36
+            23 -0.43
+            24 -0.43
+            25 -0.4
+            26 -0.36
+            27 -0.35
+            28 -0.39
+            29 -0.48
+            30 -0.6
+            31 -0.73
+            32 -0.8
+            33 -0.8
+            34 -0.71
+            35 -0.53
+            36 -0.3
+            37 -0.06
+            38 0.15
+            39 0.27
+            40 0.29
+        ]
+        bnd = UncertainBound(Normal(4.0, 2.0), Uniform(30.0, 35.0))
+        xₗ, xᵣ, yₗ, yᵣ = nsi._local_baseline(noise[:,1], noise[:,2], 4.0, 32.5, bnd)
+        @test yₗ ≈ 0.77916842211701 # manually derived in LibreCalc
+        @test yᵣ ≈ -0.7210156
+    end
 end
