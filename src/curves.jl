@@ -149,7 +149,7 @@ julia> using MonteCarloMeasurements
 
 
 julia> UncertainCurve([2.0, 3.0], [4.0 ± 1.0 , 5.0 ± 1.0])
-UncertainCurve{Float64,2000}, 2 datapoints
+UncertainCurve{Float64, 2000}, 2 datapoints
 (2.0, 4.0 ± 1.0)
 (3.0, 5.0 ± 1.0)
 
@@ -160,7 +160,7 @@ ERROR: ArgumentError: x and y need to have the same length.
 
 
 julia> UncertainCurve([3.0 ± 1.0, 4.0 ± 1.0 , 5.0 ± 1.0])
-UncertainCurve{Float64,2000}, 3 datapoints
+UncertainCurve{Float64, 2000}, 3 datapoints
 (1.0, 3.0 ± 1.0)
 (2.0, 4.0 ± 1.0)
 (3.0, 5.0 ± 1.0)

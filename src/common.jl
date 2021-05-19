@@ -165,12 +165,12 @@ Create a `Particles` object with `n` samples using a `±` or `..` expression.
 julia> using NoisySignalIntegration
 
 julia> @samples 9999 1 ± 1
-Particles{Float64,9999}
+MonteCarloMeasurements.Particles{Float64, 9999}
  1.0 ± 1.0
 
 
 julia> @samples 9999 1 .. 2
-Particles{Float64,9999}
+MonteCarloMeasurements.Particles{Float64, 9999}
  1.5 ± 0.289
 ```
 """
