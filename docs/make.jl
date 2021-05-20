@@ -15,6 +15,7 @@ makedocs(
         "Package Overview" => "overview.md",
         "Usage Guide" => "guide.md",
         "Examples" => "examples.md",
+        "Baseline Handling" => "baseline.md",
         "Internals" => "internals.md",
         "API reference" => "API.md"
     ],

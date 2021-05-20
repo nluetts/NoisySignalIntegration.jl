@@ -10,7 +10,7 @@ function get_left_right_points(
     xᵣ::T,
     b::UncertainBound
     ;
-    baseline_handeling=nothing
+    baseline_handling=nothing
 ) where {T<:AbstractFloat}
     
     xₗ, xᵣ = xₗ < xᵣ ? (xₗ, xᵣ) : (xᵣ, xₗ)
@@ -27,7 +27,7 @@ function get_left_right_points(
     ) && throw(error("At least one integration bound is outside the support region ($(minimum(x)), $(maximum(x)))."))
 
 
-    if baseline_handeling == "local"
+    if baseline_handling == "local"
         _, _, yₗ, yᵣ = _local_baseline(xs, ys, xₗ, xᵣ, b)
     else
         # bound `b` is unused in this case
@@ -93,7 +93,7 @@ end
         bh = nothing
     end
     
-    l, r, xl, xr, yl, yr = get_left_right_points(crv.x, crv.y, left, right, bound; baseline_handeling=bh)
+    l, r, xl, xr, yl, yr = get_left_right_points(crv.x, crv.y, left, right, bound; baseline_handling=bh)
     x = [xl; crv.x[l+1:r-1]; xr; xl]
     if !(local_baseline || subtract_baseline)
         y = [yl; crv.y[l+1:r-1]; zero(T); zero(T)]

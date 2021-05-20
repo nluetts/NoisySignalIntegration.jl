@@ -1,4 +1,4 @@
-# Defines the Curve and UncertainCurve types for handeling (uncertain) x-y data
+# Defines the Curve and UncertainCurve types for handling (uncertain) x-y data
 
 """
     AbstractCurve
