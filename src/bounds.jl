@@ -1,5 +1,11 @@
 # Defines the UncertainBound type to handle uncertain untegration start and end points
 
+
+# Define which quantiles are stored in UncertainBound objects
+const BOUND_QUANTILES = 0.1:0.2:0.9 |> collect
+const IDX_BOUND_MEDIAN = 3 # the median is at index 3
+
+
 """
     UncertainBound{T, N}
 
@@ -28,7 +34,7 @@ julia> using Distributions
 julia> using Random: seed!; seed!(1);
 
 julia> UncertainBound(Uniform(1, 2), Uniform(5, 6), 20_000)
-UncertainBound{Float64,20000}(1.5 ± 0.29, 5.5 ± 0.29)
+UncertainBound{Float64, 20000}(start = 1.5 ± 0.29, end = 5.5 ± 0.29)
 ```
 
 ---
@@ -53,7 +59,7 @@ julia> uc = begin # create uncertain curve with one symmetric peak
        end;
 
 julia> ub = UncertainBound(5., scale_shift_beta(2, 2, 3.5, 4.0), uc)
-UncertainBound{Float64,10000}(3.12 ± 0.063, 6.87 ± 0.064)
+UncertainBound{Float64, 10000}(start = 3.12 ± 0.063, end = 6.87 ± 0.064)
 ```
 
 ---
@@ -76,17 +82,32 @@ julia> uc = begin # create uncertain curve with one symmetric peak
        end;
 
 julia> ubs = UncertainBound([3., 7.], scale_shift_beta(2, 2, 1.3, 1.5), uc)
-2-element Array{UncertainBound{Float64,10000},1}:
- UncertainBound{Float64,10000}(2.3 ± 0.022, 3.7 ± 0.022)
- UncertainBound{Float64,10000}(6.3 ± 0.022, 7.7 ± 0.022)
+2-element Vector{UncertainBound{Float64, 10000}}:
+ UncertainBound{Float64, 10000}(start = 2.3 ± 0.022, end = 3.7 ± 0.022)
+ UncertainBound{Float64, 10000}(start = 6.3 ± 0.022, end = 7.7 ± 0.022)
 ```
 """
 struct UncertainBound{T, N}
     left::Particles{T, N}
     right::Particles{T, N}
+    # quantiles for local baseline subtraction and plotting
+    _left_quantiles
+    _right_quantiles
 end
 
+function Base.show(io::IO, c::UncertainBound{T, N}) where {T, N}
+    print(io, "UncertainBound{$T, $N}(start = $(c.left), end = $(c.right))")
+end
+
+
 # Constructors
+
+# Base constructor that injects quantiles
+function UncertainBound(left::Particles{T, N}, right::Particles{T, N}) where {T, N}
+    qs = BOUND_QUANTILES
+    lqs, rqs = [[quantile(lr, q) for q in qs] for lr in (left, right)]
+    return UncertainBound{T, N}(left, right, lqs, rqs)
+end
 
 
 # Create a left/right bound

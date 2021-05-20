@@ -304,7 +304,7 @@ Monte-Carlo algorithm. We can do so by passing an `UncertainCurve` and an array
 of `UncertainBound`s to the plot function:
 
 ```@example FTIR
-plot(uncertain_spectrum, [wb_1, wb_2]; size=(400, 500))
+plot(uncertain_spectrum, [wb_1, wb_2]; size=(400, 500), local_baseline=true)
 ```
 
 We can see from the plot that our estimate for the width of the peaks was
@@ -314,7 +314,7 @@ perhaps a bit too small, so we retry:
 width_distribution = scale_shift_beta(2, 2, 3, 4) # width will fall in the range [3, 4]
 wb_1, wb_2 = UncertainBound(positions, width_distribution, uncertain_spectrum)
 
-plot(uncertain_spectrum, [wb_1, wb_2]; size=(400, 500))
+plot(uncertain_spectrum, [wb_1, wb_2]; size=(400, 500), local_baseline=true)
 ```
 
 ## Running the integration algorithm
@@ -324,7 +324,7 @@ to pass in the uncertain spectrum and integration bounds. Since we pass in two
 integration bounds, we retrieve two areas:
 
 ```@example FTIR
-area_1, area_2 = mc_integrate(uncertain_spectrum, [wb_1, wb_2])
+area_1, area_2 = mc_integrate(uncertain_spectrum, [wb_1, wb_2]; local_baseline=true)
 ```
 
 We can look at the histogram of the integrals:

@@ -45,13 +45,13 @@ plot(uncertain_spectrum)
 
 bounds = UncertainBound([15., 30.], scale_shift_beta(2, 2, 4.5, 5), uncertain_spectrum)
 
-plot(uncertain_spectrum, bounds; subtract_baseline=false, size=(500, 600))
+plot(uncertain_spectrum, bounds; size=(500, 600))
 ```
 
 ```@example Raman
 # integrate the bands and calculate the ratio
 
-area1, area2 = mc_integrate(uncertain_spectrum, bounds; subtract_baseline=false)
+area1, area2 = mc_integrate(uncertain_spectrum, bounds)
 
 histogram(area1/area2)
 ```
@@ -116,13 +116,13 @@ Definition of integration bounds:
 uncertain_mh_curve = add_noise(noisy_mh_curve, noise_model)
 # definition using distributions for start and end point
 bnd = UncertainBound(scale_shift_beta(2, 2, -5, -4), scale_shift_beta(2, 2, 4, 5))
-plot(uncertain_mh_curve, bnd; subtract_baseline=false, size=(500, 600), xlim=(-25, 25))
+plot(uncertain_mh_curve, bnd; size=(500, 600), xlim=(-25, 25))
 ```
 
 Integration:
 
 ```@example mh
-area = mc_integrate(uncertain_mh_curve, bnd; subtract_baseline=false)
+area = mc_integrate(uncertain_mh_curve, bnd)
 
 histogram(area; label="area")
 ```
@@ -142,7 +142,7 @@ function analyze_noisy_mh(f)
     println(noise_model)
     uncertain_mh_curve = add_noise(noisy_mh_curve, noise_model)
     bnd = UncertainBound(scale_shift_beta(2, 2, -4.5-0.5*f, -4.5+0.5*f), scale_shift_beta(2, 2, 4.5-0.5*f, 4.5+0.5*f))
-    return mc_integrate(uncertain_mh_curve, bnd; subtract_baseline=false)
+    return mc_integrate(uncertain_mh_curve, bnd)
 end
 ```
 
@@ -209,16 +209,16 @@ nm = fit_noise(noise)
 # prepare spectral samples
 uspec = add_noise(bands, nm)
 # declare integration bounds (several symmetric bands with same width)
-bnds = UncertainBound([15., 30., 60., 85.], scale_shift_beta(2, 2, 3, 4), uspec)
+bnds = UncertainBound([15., 30., 60., 85.], scale_shift_beta(2, 2, 4, 6), uspec)
 # integrate
-areas = mc_integrate(uspec, bnds)
+areas = mc_integrate(uspec, bnds; local_baseline=true)
 A_A, A_B, A_C, A_D = areas
 ```
 
 We inspect the Monte-Carlo draws visually:
 
 ```@example propagation
-plot(uspec, bnds, size=(500, 600))
+plot(uspec, bnds; size=(500, 600), local_baseline=true)
 ```
 
 We put in our calculated intensities and their uncertainties (see [`MonteCarloMeasurements.jl` documentation](https://baggepinnen.github.io/MonteCarloMeasurements.jl/stable/api/#MonteCarloMeasurements.:..-Tuple{Any,Any})):

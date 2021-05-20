@@ -13,6 +13,6 @@ given in the usage guide.
 **Table of Contents**
 
 ```@contents
-Pages = ["overview.md", "guide.md", "examples.md", "API.md", "internals.md"]
+Pages = ["overview.md", "guide.md", "examples.md", "baseline.md", "API.md", "internals.md"]
 Depth = 4
 ```

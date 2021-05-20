@@ -1,4 +1,4 @@
-# Defines the Curve and UncertainCurve types for handeling (uncertain) x-y data
+# Defines the Curve and UncertainCurve types for handling (uncertain) x-y data
 
 """
     AbstractCurve
@@ -29,6 +29,8 @@ Base.:(-)(y, c::AbstractCurve) = typeof(c)(c.x, y .- c.y)
 Base.:(*)(y, c::AbstractCurve) = typeof(c)(c.x, y .* c.y)
 Base.:(/)(y, c::AbstractCurve) = typeof(c)(c.x, y ./ c.y)
 Base.vcat(c0::AbstractCurve, c1::AbstractCurve) = typeof(c0)(vcat(c0.x, c1.x), vcat(c0.y, c1.y))
+
+stitch(curves...) = reduce(vcat, curves)
 
 function Base.sort(c::T) where {T <: AbstractCurve}
     x, y = c.x, c.y
@@ -147,7 +149,7 @@ julia> using MonteCarloMeasurements
 
 
 julia> UncertainCurve([2.0, 3.0], [4.0 ± 1.0 , 5.0 ± 1.0])
-UncertainCurve{Float64,2000}, 2 datapoints
+UncertainCurve{Float64, 2000}, 2 datapoints
 (2.0, 4.0 ± 1.0)
 (3.0, 5.0 ± 1.0)
 
@@ -158,7 +160,7 @@ ERROR: ArgumentError: x and y need to have the same length.
 
 
 julia> UncertainCurve([3.0 ± 1.0, 4.0 ± 1.0 , 5.0 ± 1.0])
-UncertainCurve{Float64,2000}, 3 datapoints
+UncertainCurve{Float64, 2000}, 3 datapoints
 (1.0, 3.0 ± 1.0)
 (2.0, 4.0 ± 1.0)
 (3.0, 5.0 ± 1.0)
