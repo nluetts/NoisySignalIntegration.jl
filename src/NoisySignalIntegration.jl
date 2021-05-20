@@ -8,6 +8,7 @@ using Polynomials:          fit
 using Printf:               @sprintf
 using Random:               seed!
 using RecipesBase
+using Requires
 using Statistics:           mean
 using StatsBase:            autocov
 
@@ -21,6 +22,10 @@ include("noise.jl")
 include("integration.jl")
 include("plotting.jl")
 include("testdata.jl")
+
+function __init__()
+    @require Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80" include("animate.jl")
+end
 
 export
     Curve,
