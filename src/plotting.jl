@@ -109,8 +109,9 @@ end
     @series begin
         crv
     end
-    for b ∈ bnds
+    for (j, b) ∈ enumerate(bnds)
         @series begin
+            fillcolor := j % 2 == 1 ? :red : :orange
             left, right = get_draw(draw, b)
             bound := b
             crv, left, right
