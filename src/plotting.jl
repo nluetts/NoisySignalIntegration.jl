@@ -8,7 +8,7 @@ function get_left_right_points(
     ys::AbstractArray{T},
     xₗ::T,
     xᵣ::T,
-    b::UncertainBound
+    b::Union{Nothing, UncertainBound}
     ;
     baseline_handling=nothing
 ) where {T<:AbstractFloat}
@@ -94,11 +94,17 @@ end
     end
     
     l, r, xl, xr, yl, yr = get_left_right_points(crv.x, crv.y, left, right, bound; baseline_handling=bh)
-    x = [xl; crv.x[l+1:r-1]; xr; xl]
     if !(local_baseline || subtract_baseline)
-        y = [yl; crv.y[l+1:r-1]; zero(T); zero(T)]
-    else
+        x = [xl; crv.x[l+1:r-1]; xr; xr; xl]
+        y = [yl; crv.y[l+1:r-1]; yr; zero(T); zero(T)]
+    elseif subtract_baseline
+        x = [xl; crv.x[l+1:r-1]; xr; xl]
         y = [yl; crv.y[l+1:r-1]; yr; yl]
+    else
+        _, _, ycl, ycr = _endpoint_to_endpoint_baseline(crv.x, crv.y, left, right) # to get extra points located on the curve
+        x = [xl; crv.x[l+1:r-1]; xr; xr; xl]
+        y = [ycl; crv.y[l+1:r-1]; ycr; yr; yl]
+
     end
     
     return x, y
