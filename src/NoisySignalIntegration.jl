@@ -36,6 +36,7 @@ export
     UncertainCurve,
     add_noise,
     crop,
+    stitch,
     fit_noise,
     get_cov,
     mc_integrate,

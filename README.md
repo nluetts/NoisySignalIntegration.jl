@@ -17,3 +17,8 @@ add https://github.com/nluetts/NoisySignalIntegration.jl
 ## Getting Started
 
 Check out the [documentation](https://nluetts.github.io/NoisySignalIntegration.jl/dev/) to learn how to use the package.
+
+## Contributing and Support
+
+If you have problems with the package, submit an [issue](https://github.com/nluetts/NoisySignalIntegration.jl/issues).
+Feel free to fork the project and open a pull request if you would like to contribute.

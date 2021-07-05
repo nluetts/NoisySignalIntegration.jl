@@ -30,6 +30,13 @@ Base.:(*)(y, c::AbstractCurve) = typeof(c)(c.x, y .* c.y)
 Base.:(/)(y, c::AbstractCurve) = typeof(c)(c.x, y ./ c.y)
 Base.vcat(c0::AbstractCurve, c1::AbstractCurve) = typeof(c0)(vcat(c0.x, c1.x), vcat(c0.y, c1.y))
 
+"""
+    stitch(curves...)
+
+Append curves one after the other.
+
+Useful when cutting out signals from `Curves` for baseline correction purposes.
+"""
 stitch(curves...) = reduce(vcat, curves)
 
 function Base.sort(c::T) where {T <: AbstractCurve}

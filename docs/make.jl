@@ -12,6 +12,7 @@ makedocs(
     modules=[NoisySignalIntegration],
     pages = [
         "Home" => "index.md",
+        "Installation" => "installation.md",
         "Package Overview" => "overview.md",
         "Usage Guide" => "guide.md",
         "Examples" => "examples.md",

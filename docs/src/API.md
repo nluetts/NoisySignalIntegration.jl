@@ -28,6 +28,8 @@ UncertainBound
 ```@docs
 crop
 
+stitch
+
 add_noise
 ```
 
