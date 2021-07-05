@@ -5,3 +5,5 @@ To install it for your project, enter the package mode in the Julia REPL (press 
 ```
 add https://github.com/nluetts/NoisySignalIntegration.jl
 ```
+
+Note that the package requires Julia v1.5 or above.
