@@ -18,6 +18,11 @@ add https://github.com/nluetts/NoisySignalIntegration.jl
 
 Check out the [documentation](https://nluetts.github.io/NoisySignalIntegration.jl/dev/) to learn how to use the package.
 
+If you don't have a local Julia installation, you can test the package on [mybinder.org](https://mybinder.org).
+Click the badge below and open one of the example notebooks:
+
+[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/nluetts/NSI-Binder/HEAD?filepath=example-1.ipynb&urlpath=lab)
+
 ## Contributing and Support
 
 If you have problems with the package, submit an [issue](https://github.com/nluetts/NoisySignalIntegration.jl/issues).
