@@ -28,8 +28,13 @@ The core integration function that is used to numerically integrate each draw.
 Defaults to `NoisySignalIntegration.trapz`.
 The function that is used to substitute [`trapz`](@ref) must share its call signature.
 
-`subtract_baseline`:
-If true, for each draw a local baseline defined by the integration window start and end point will be subtracted.
+`subtract_baseline` (deprecated in favor of `local_baseline`):
+If true, for each draw a local linear baseline defined by the integration window start and end point will be subtracted.
+
+`local_baseline`:
+If true, for each draw a local linear baseline defined by the integration window start and end point will be subtracted.
+The y-values of the start and end point are derived from a weighted average over the start and end point distributions, see 
+[the documentation](https://nluetts.github.io/NoisySignalIntegration.jl/dev/baseline/#Build-in) for further information.
 """
 function mc_integrate(uc::UncertainCurve{T, N}, bnds::Vector{UncertainBound{T, M}}; intfun=trapz, subtract_baseline=false, local_baseline=false) where {T, M, N}
 

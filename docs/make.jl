@@ -2,6 +2,7 @@ import Pkg
 Pkg.activate(@__DIR__)
 
 using Documenter
+using Plots # this needs to be imported here so that Require.jl includes animate_draws when building docs
 using NoisySignalIntegration
 
 # include doctests from docstrings

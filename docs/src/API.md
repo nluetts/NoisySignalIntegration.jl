@@ -61,3 +61,9 @@ trapz
 ```@docs
 @samples
 ```
+
+## Misc
+
+```@docs
+animate_draws
+```

@@ -4,6 +4,7 @@ using .Plots
     animate_draws(uc::UncertainCurve, bnds::Vector{UncertainBound}; n=20, fps=5, filepath=nothing, kw...)
 
 Create a gif animation showing the first `n` random draws.
+Requires the Plots.jl package.
 
 Create an animation of the Monte-Carlo iterations when integrating the
 `UncertainCurve` `uc` using the `UncertainBound`s `bnds`.
@@ -14,7 +15,8 @@ Create an animation of the Monte-Carlo iterations when integrating the
 
 `fps`: frames-per-second
 
-`filepath`: if provided, the gif-animation will be stored using this filepath
+`filepath`: if provided, the gif-animation will be stored using this filepath,
+otherwise a temporary file will be created.
 
 Further keyword arguments are passed on the `Plots.plot()` function.
 """
@@ -34,3 +36,5 @@ function animate_draws(
     fp = filepath === nothing ? tempname()*".gif" : filepath
     return gif(anim, fp, fps=fps)
 end
+
+export animate_draws

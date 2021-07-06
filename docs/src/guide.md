@@ -317,6 +317,17 @@ wb_1, wb_2 = UncertainBound(positions, width_distribution, uncertain_spectrum)
 plot(uncertain_spectrum, [wb_1, wb_2]; size=(400, 500), local_baseline=true)
 ```
 
+An alternative to the plot function is the [`animate_draws`](@ref) function which allows you
+to visualize the Monte-Carlo draws in a gif animation:
+
+```@example FTIR
+NoisySignalIntegration.animate_draws(
+    uncertain_spectrum, [wb_1, wb_2];
+    size=(300, 150),
+    local_baseline=true
+)
+```
+
 ## Running the integration algorithm
 
 The integration is performed with the function [`mc_integrate`](@ref). We have
