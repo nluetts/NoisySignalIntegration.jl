@@ -1,6 +1,15 @@
 # NoisySignalIntegration.jl
 
-*A tool to determine uncertainty in numeric integrals of noisy data.*
+*A tool to determine uncertainty in numeric integrals of noisy x-y data.*
+
+`NoisySignalIntegration` implements a method to determine the uncertainty in
+numeric integrals of noisy x-y data on the basis of a Monte-Carlo process.  It
+can include uncertainty due to noise, baseline subtraction, and placement in
+integration bounds.  To do this, the integration is repeated many times while
+the noise of the data, baseline, and integration bounds are varied based on a
+noise model and user supplied probability distributions.
+
+To view the documentation, click the badge below:
 
 [![Documentation, latest](https://img.shields.io/badge/docs-latest-blue.svg)](https://nluetts.github.io/NoisySignalIntegration.jl/dev/)
 
@@ -13,6 +22,14 @@ To install it for your project, enter the package mode in the Julia REPL (press 
 ```
 add https://github.com/nluetts/NoisySignalIntegration.jl
 ```
+
+While still in package mode, you can type
+
+```
+test NoisySignalIntegration
+```
+
+to run the package's unit tests.
 
 ## Getting Started
 
