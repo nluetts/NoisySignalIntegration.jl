@@ -8,7 +8,7 @@ tags:
   - noisy data
   - numeric integration
 authors:
-  - name: Nils O.&nbsp;B. Lüttschwager
+  - name: Nils O. B. Lüttschwager
     orcid: 0000-0001-8459-1714
     affiliation: 1
 affiliations:
