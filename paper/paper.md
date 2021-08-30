@@ -58,7 +58,7 @@ the data may not be described by a peak function and/or the noise may not be
 normally distributed, preventing a simple least squares regression.
 NoisySignalIntegration.jl was developed as a solution to this problem.  While
 the package was developed specifically for the determination of band area
-uncertainties in the context of molecular spectroscopy [@karir2019; @gawrilow],
+uncertainties in the context of molecular spectroscopy [@karir2019; @gawrilow; @zimmermann],
 it is applicable in any research area where signals (peaks, lines, bands,
 etc.)^[The name usually depends on the specific area and context.] in x-y data
 need to be integrated and a thorough uncertainty analysis is desired.
