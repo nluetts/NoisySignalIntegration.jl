@@ -34,7 +34,7 @@ objective uncertainty evaluation than a statement based on experience or
 laborious manual analysis [@goebench].
 
 NoisySignalIntegration.jl includes a [detailed
-documentation](https://nluetts.github.io/NoisySignalIntegration.jl/dev/) that
+documentation](https://nluetts.github.io/NoisySignalIntegration.jl/stable/) that
 covers the typical workflow with several examples. The API uses custom
 datatypes and convenience functions to aid the data
 analysis and permits flexible customizations: Any probability distribution from
