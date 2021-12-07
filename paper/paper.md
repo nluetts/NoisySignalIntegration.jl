@@ -65,7 +65,10 @@ need to be integrated and a thorough uncertainty analysis is desired.
 
 # Acknowledgements
 
-The author thanks Charlotte Zimmermann, Maxim Gawrilow, and Robert Medel for testing and
-discussions during the development of NoisySignalIntegration.jl.
+The author thanks Charlotte Zimmermann, Maxim Gawrilow, and Robert Medel for
+testing and discussions during the development of NoisySignalIntegration.jl.
+The development has furthermore profited from the benchmarking spirit and
+efforts in the DFG research training group GRK 2455/389479699 to analyse
+experiments as rigorously as possible.
 
 # References
