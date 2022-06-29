@@ -1,3 +1,5 @@
+using MonteCarloMeasurements: pquantile
+
 """
 Regression tests
 
@@ -40,7 +42,7 @@ end
     # compare percentiles to previous results
     prev_result = [3.79e-01, 5.92e-01, 8.60e-01] # 2.5, 50 and 97.5 percentiles from https://doi.org/10.1039/C9CP00435A
     for (p, pr) in zip([2.5, 50, 97.5], prev_result)
-        r = percentile(result, p)
+        r = pquantile(result, p/100.0)
         @test abs(r - pr)/r < 0.025 # here, the new implementation reproduces the previous results within 2.5%
     end
 end
@@ -67,10 +69,10 @@ end
     p975_pr = 9.18e-01 # previous 97.5 percentiles from https://doi.org/10.1039/C9CP00435A
     # in case of methanol-d-3-methylphenylacetylene, the percentiles are less well reproduced
     # but the agreement is still better than 7%
-    r = percentile(result, 2.5)
+    r = pquantile(result, 2.5/100.0)
     @test abs(r - p25_pr)/r ≈ 0.0739333525 rtol = 1e-7 # worst disagreement (but for smallest number, 0.24 vs. 0.22 is not that bad ...)
-    r = percentile(result, 50)
+    r = pquantile(result, 50/100.0)
     @test abs(r - p50_pr)/r ≈ 0.000140994154 rtol = 1e-6 # the median is very well reproduced
-    r = percentile(result, 97.5)
+    r = pquantile(result, 97.5/100.0)
     @test abs(r - p975_pr)/r ≈ 0.04008646654 rtol = 1e-7
 end

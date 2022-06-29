@@ -1,3 +1,5 @@
+using MonteCarloMeasurements: pmean, pstd
+
 @testset "allapproxequal()" begin
     @test nsi.allapproxequal([])                     == true
     @test nsi.allapproxequal([1.0])                  == true
@@ -92,38 +94,38 @@ end
     @testset "Normal" begin
         ref = Particles(10_000, Normal(1, 1))
         out = @samples 10_000 1 ± 1
-        @test mean(ref) ≈ mean(out)
-        @test std(ref) ≈ std(out)
+        @test pmean(ref) ≈ pmean(out)
+        @test pstd(ref) ≈ pstd(out)
         # pass expression to macro
         out = @samples 10_000 (2 / 2) ± (3 - 2)
-        @test mean(ref) ≈ mean(out)
-        @test std(ref) ≈ std(out)
+        @test pmean(ref) ≈ pmean(out)
+        @test pstd(ref) ≈ pstd(out)
         # pass variables to macro
         out = let
             a = 1
             b = 1
             @samples 10_000 a ± b
         end
-        @test mean(ref) ≈ mean(out)
-        @test std(ref) ≈ std(out)
+        @test pmean(ref) ≈ pmean(out)
+        @test pstd(ref) ≈ pstd(out)
     end
     @testset "Uniform" begin
         ref = Particles(10_000, Uniform(1, 2))
         out = @samples 10_000 1 .. 2
-        @test mean(ref) ≈ mean(out)
-        @test std(ref) ≈ std(out)
+        @test pmean(ref) ≈ pmean(out)
+        @test pstd(ref) ≈ pstd(out)
         # pass expression to macro
         out = @samples 10_000 (2 / 2) .. (3 - 1)
-        @test mean(ref) ≈ mean(out)
-        @test std(ref) ≈ std(out)
+        @test pmean(ref) ≈ pmean(out)
+        @test pstd(ref) ≈ pstd(out)
         # pass variables to macro
         out = let
             a = 1
             b = 2
             @samples 10_000 a .. b
         end
-        @test mean(ref) ≈ mean(out)
-        @test std(ref) ≈ std(out)
+        @test pmean(ref) ≈ pmean(out)
+        @test pstd(ref) ≈ pstd(out)
     end
     @test_throws ArgumentError (@samples 1 1 + 1)
     @test_throws ArgumentError (@samples 1 1 + 1 + 1)

@@ -105,7 +105,7 @@ end
 # Base constructor that injects quantiles
 function UncertainBound(left::Particles{T, N}, right::Particles{T, N}) where {T, N}
     qs = BOUND_QUANTILES
-    lqs, rqs = [[quantile(lr, q) for q in qs] for lr in (left, right)]
+    lqs, rqs = [[pquantile(lr, q) for q in qs] for lr in (left, right)]
     return UncertainBound{T, N}(left, right, lqs, rqs)
 end
 

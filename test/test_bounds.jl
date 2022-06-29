@@ -1,3 +1,6 @@
+using MonteCarloMeasurements: pstd
+
+
 num_part(::UncertainBound{T, N}) where {T, N} = N
 ub_eltype(::UncertainBound{T, N}) where {T, N} = T
 
@@ -25,8 +28,8 @@ end
     ub = UncertainBound(dleft, dright)
     @test num_part(ub) == 10_000 # default no. of samples from constructor
     @test ub_eltype(ub) == Float64  # Distributions.jl should yield Float64 ny default
-    @test ub.left |> std ≈ 1 atol = 1e-4
-    @test ub.right |> std ≈ 1/√(12) atol = 1e-4
+    @test ub.left |> pstd ≈ 1 atol = 1e-4
+    @test ub.right |> pstd ≈ 1/√(12) atol = 1e-4
     ub = UncertainBound(dleft, dright, 1000)
     @test num_part(ub) == 1000
 end
