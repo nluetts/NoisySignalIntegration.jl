@@ -17,8 +17,6 @@ jobs:
           version: '1.6'
       - name: Install dependencies
         run: julia --project=docs/ -e 'using Pkg; Pkg.develop(PackageSpec(path=pwd())); Pkg.instantiate()'
-      - name: Install GR dependencies
-        run: sudo apt install libxt6 libxrender1 libxext6 libgl1-mesa-glx libqt5widgets5
       - name: Build and deploy
         env:
           GKSwstype: 100
