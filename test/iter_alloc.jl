@@ -7,6 +7,8 @@ using NoisySignalIntegration
     return y
 end
 
+const CurveIterState = Tuple{Int64,Bool}
+
 struct MyVec
     x::Vector{Float64}
     y::Vector{Float64}
@@ -14,36 +16,73 @@ end
 
 function Base.iterate(
     iter::Tuple{MyVec,Float64,Float64},
-    state::Tuple{UnitRange{Int64},UnitRange{Int64},Int64}
-)::Union{Nothing,Tuple{Tuple{Float64,Float64},Tuple{UnitRange{Int64},UnitRange{Int64},Int64}}}
+    state::Tuple{Int64,Bool}
+)::Union{Nothing,Tuple{Tuple{Float64,Float64},Tuple{Int64,Bool}}}
     mv, left, right = iter
-    left_position, right_position, index = state
+    index, return_right = state
 
-    if index > right_position.start || index > length(mv.x)
-        return nothing
+    while index < length(mv.x)
+        xi = mv.x[index]
+        xj = mv.x[index+1]
+        yi = mv.y[index]
+        yj = mv.y[index+1]
+
+        if xj <= left
+            # not yet in bounds, continue while loop
+            index += 1
+            continue
+        elseif xi >= right
+            # moved outside bounds, stop iteration
+            return nothing
+        elseif xi >= left && xj <= right
+            # xi and xj fall within bounds, return data point
+            return ((xi, yi), (index + 1, false))
+        elseif xi < left < xj && right >= xj
+            # left bound falls between xi and xj,
+            # interpolate and return data point at `left`
+            yleft = lininterp(left, xi, xj, yi, yj)
+            return ((left, yleft), (index + 1, false))
+        elseif xi < right < xj && left <= xi
+            # right bound falls between xi and xj
+            if return_right
+                # if we already returned xi for this index,
+                # interpolate and return data point at `right` 
+                yright = lininterp(right, xi, xj, yi, yj)
+                return ((right, yright), (index + 1, false))
+            else
+                # we have to return (xi, yi) before returning
+                # interpolated data point at `right`;
+                # note that index is _not_ incremented and
+                # `return_right` flag is set
+                return ((xi, yi), (index, true))
+            end
+        elseif xi < left <= right < xj
+            # very rare case where `left` and `right` fall
+            # both between xi and xj
+            if return_right
+                yright = lininterp(right, xi, xj, yi, yj)
+                return ((right, yright), (index + 1, false))
+            else
+                yleft = lininterp(left, xi, xj, yi, yj)
+                return ((left, yleft), (index, true))
+            end
+        else
+            throw("Met an iterator state that should not have been possible")
+        end
     end
-    if index >= left_position.start && index < right_position.stop
-        return ((mv.x[index], mv.y[index]), (left_position, right_position, index + 1))
-    elseif index < left_position.stop
-        yl = lininterp(left, mv.x[left_position.stop], mv.x[left_position.start], mv.y[left_position.stop], mv.y[left_position.start])
-        return ((left, yl), (left_position, right_position, left_position.start))
-    elseif index == right_position.start
-        yr = lininterp(right, mv.x[right_position.stop], mv.x[right_position.start], mv.y[right_position.stop], mv.y[right_position.start])
-        return ((right, yr), (left_position, right_position, index + 1))
-    else
-        return nothing
-    end
+    return nothing
 end
 
 function Base.iterate(
     iter::Tuple{MyVec,Float64,Float64},
-)::Union{Nothing,Tuple{Tuple{Float64,Float64},Tuple{UnitRange{Int64},UnitRange{Int64},Int64}}}
+)::Union{Nothing,Tuple{Tuple{Float64,Float64},Tuple{Int64,Bool}}}
 
     mv, left, right = iter
     left, right = min(left, right), max(left, right)
-    left_position = searchsorted(mv.x, left)
-    right_position = searchsorted(mv.x, right)
-    Base.iterate(iter, (left_position, right_position, 1))
+    if left == right || mv.x[end] <= left || mv.x[1] >= right
+        return nothing
+    end
+    Base.iterate(iter, (1, false))
 end
 
 function test_iter(mv)
