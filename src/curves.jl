@@ -370,7 +370,6 @@ end
 function Base.iterate(
     iter::Tuple{Curve{Float64},Float64,Float64},
 )::Union{Nothing,Tuple{Tuple{Float64,Float64},Tuple{Int64,Bool}}}
-
     mv, left, right = iter
     left, right = min(left, right), max(left, right)
     if left == right || mv.x[end] <= left || mv.x[1] >= right
