@@ -14,6 +14,7 @@ if false
 else
     include("test_common.jl")
     include("test_curves.jl")
+    include("test_iteration.jl")
     include("test_bounds.jl")
     include("test_noise.jl")
     include("test_integration.jl")
