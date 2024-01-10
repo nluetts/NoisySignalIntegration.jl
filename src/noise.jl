@@ -35,14 +35,14 @@ Construct `NoiseSample` objects with a high enough order
 struct NoiseSample{T} <: AbstractCurve
     x::Vector{T}
     y::Vector{T}
-    function NoiseSample{T}(x, y, n::Int=0) where T
+    function NoiseSample{T}(x, y, n::Int=0) where {T}
         verify_same_length(x, y)
         return new{T}(x, detrend(x, y, n))
     end
 end
 
-NoiseSample(x::Vector{T}, y::Vector{T}, n::Int=0) where T = NoiseSample{T}(x, y, n)
-NoiseSample(y::Vector{T}, n::Int=0) where T = NoiseSample(collect(T, 1:length(y)), y, n)
+NoiseSample(x::Vector{T}, y::Vector{T}, n::Int=0) where {T} = NoiseSample{T}(x, y, n)
+NoiseSample(y::Vector{T}, n::Int=0) where {T} = NoiseSample(collect(T, 1:length(y)), y, n)
 NoiseSample(s::Curve, n::Int=0) = NoiseSample(s.x, s.y, n)
 
 """
@@ -73,11 +73,11 @@ Model to describe noise following a univariate Gaussian distribution
 
 - `σ::T` : standard deviation
 """
-struct GaussianNoiseModel{T <: Real} <: AbstractNoiseModel
+struct GaussianNoiseModel{T<:Real} <: AbstractNoiseModel
     σ::T
 end
 
-Base.eltype(::GaussianNoiseModel{T}) where T = T
+Base.eltype(::GaussianNoiseModel{T}) where {T} = T
 
 function Base.show(io::IO, nm::GaussianNoiseModel)
     println(io, "GaussianNoiseModel(σ = $(nm.σ))")
@@ -94,13 +94,13 @@ Model to describe noise following a multivariate Gaussian distribution
 - `α::T` : autocovariance amplitude
 - `λ::T` : autocovaraiance lag
 """
-struct MvGaussianNoiseModel{T <: Real} <: AbstractNoiseModel
+struct MvGaussianNoiseModel{T<:Real} <: AbstractNoiseModel
     δx::T
     α::T
     λ::T
 end
 
-Base.eltype(::MvGaussianNoiseModel{T}) where T = T
+Base.eltype(::MvGaussianNoiseModel{T}) where {T} = T
 
 function Base.show(io::IO, nm::MvGaussianNoiseModel)
     println(io, "MvGaussianNoiseModel(α = $(nm.α), λ = $(nm.λ))")
@@ -116,7 +116,7 @@ Fit function for noise autocorrelation.
 """
 function gauss_kernel(Δx, β)
     α, λ = β
-    return @. α^2 * exp(-0.5 * (Δx/λ)^2)
+    return @. α^2 * exp(-0.5 * (Δx / λ)^2)
 end
 
 """
@@ -125,19 +125,19 @@ end
 Return covariance matrix `Σ` with size `n` × `n` for the exponentiated quadratic kernel
 with amplitude `α` and lag `λ` calculated on a grid of spacing `δx`.
 """
-function get_cov(δx::T, n::Int, α::T, λ::T) where {T <: Real}
+function get_cov(δx::T, n::Int, α::T, λ::T) where {T<:Real}
     β = [α, λ]
     Σ = Array{T}(undef, n, n)
     for i = (1:n), j = (1:n)
         Δx = δx * (i - j)
-        Σ[i,j] = gauss_kernel(Δx, β)
+        Σ[i, j] = gauss_kernel(Δx, β)
         if i == j
-            Σ[i,j] *= 1.0000001 # for numerical stability (?)
+            Σ[i, j] *= 1.0000001 # for numerical stability (?)
         end
     end
     return Σ
 end
-get_cov(nm::MvGaussianNoiseModel{T}, n::Int) where {T <: Real} = get_cov(nm.δx, n, nm.α, nm.λ)
+get_cov(nm::MvGaussianNoiseModel{T}, n::Int) where {T<:Real} = get_cov(nm.δx, n, nm.α, nm.λ)
 
 
 function estimate_autocov(n::NoiseSample)
@@ -145,9 +145,9 @@ function estimate_autocov(n::NoiseSample)
     if !allapproxequal(diff(n.x))
         throw(ArgumentError("Noise analysis only works on an evenly spaced spectral grid."))
     end
-    δx = abs(n.x[1]-n.x[2]) # x-values must be evenly spaced
+    δx = abs(n.x[1] - n.x[2]) # x-values must be evenly spaced
     lag_units = begin
-        N = convert(Integer, round(length(n)/2))
+        N = convert(Integer, round(length(n) / 2))
         collect(1:N)
     end
     lags = δx .* lag_units
@@ -155,9 +155,9 @@ function estimate_autocov(n::NoiseSample)
     return lags, acov
 end
 
-function _fit_noise(lags::Vector{T}, autocov::Vector{T}; α_guess=1.0, λ_guess=1.0) where {T <: Real}
+function _fit_noise(lags::Vector{T}, autocov::Vector{T}; α_guess=1.0, λ_guess=1.0) where {T<:Real}
     ma = maximum(autocov) # rescale autocov to make fit more robust
-    fit = curve_fit(gauss_kernel, lags, autocov./ma, [α_guess, λ_guess])
+    fit = curve_fit(gauss_kernel, lags, autocov ./ ma, [α_guess, λ_guess])
     α, λ = fit.param
     return MvGaussianNoiseModel(lags[1], α * √ma, λ)
 end
@@ -183,7 +183,7 @@ end
 """
 Generate correlated noise from a noise sample or noise model.
 """
-function generate_noise(nm::MvGaussianNoiseModel{T}, len::Int, samples::Int) where {T <: Real}
+function generate_noise(nm::MvGaussianNoiseModel{T}, len::Int, samples::Int) where {T<:Real}
     Σ = get_cov(nm, len)
     return Particles(samples, MvNormal(Σ))
 end
@@ -196,7 +196,7 @@ end
 """
 Generate uncorrelated noise from a GaussianNoiseModel.
 """
-function generate_noise(nm::GaussianNoiseModel{T}, len::Int, samples::Int) where {T <: Real}
+function generate_noise(nm::GaussianNoiseModel{T}, len::Int, samples::Int) where {T<:Real}
     return Particles(samples, MvNormal(zeros(T, len), nm.σ))
 end
 
