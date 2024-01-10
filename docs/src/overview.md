@@ -67,6 +67,10 @@ some basic requirements:
     function on your input data (`Curve` object) once in the beginning of your
     analysis:
 
+```@setup load_path
+push!(LOAD_PATH, "../../src")
+```
+
 ```jldoctest
 julia> using NoisySignalIntegration
 

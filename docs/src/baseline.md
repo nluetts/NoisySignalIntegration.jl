@@ -25,6 +25,10 @@ deprecated. The difference of `local_baseline` and `subtract_baseline` can be
 visualized when animating draws of curves and integration bound samples (using
 `Plots.@animate`): 
 
+```@setup load_path
+push!(LOAD_PATH, "../../src")
+```
+
 ```@eval
 using NoisySignalIntegration
 using Plots

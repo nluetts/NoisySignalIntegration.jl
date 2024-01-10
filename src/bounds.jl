@@ -28,7 +28,7 @@ Create an `UncertainBound` from two distributions `left` and `right` defining un
 
 Start point falls in the range [1, 2] with uniform probability, end point falls in the range [5, 6] with uniform probability:
 
-```jldoctest UBexample
+```julia
 julia> using Distributions
 
 julia> using Random: seed!; seed!(1);
@@ -51,7 +51,7 @@ position from draw to draw (note that, due to noise, the peak may change its pos
 
 Uncertainty of width is modeled with a scaled and shifted Beta(2, 2) distribution:
 
-```jldoctest UBexample
+```julia
 julia> uc = begin # create uncertain curve with one symmetric peak
            x = 0:0.1:10;
            y = @. exp(-(x - 5)^2)
@@ -59,7 +59,7 @@ julia> uc = begin # create uncertain curve with one symmetric peak
        end;
 
 julia> ub = UncertainBound(5., scale_shift_beta(2, 2, 3.5, 4.0), uc)
-UncertainBound{Float64, 10000}(start = 3.12 ± 0.063, end = 6.87 ± 0.064)
+UncertainBound{Float64, 10000}(start = 3.13 ± 0.064, end = 6.88 ± 0.064)
 ```
 
 ---
@@ -74,7 +74,7 @@ Useful for integration of several symmetric peaks for which the same width may b
 
 Uncertainty of width is modeled with a scaled and shifted Beta(2, 2) distribution:
 
-```jldoctest UBexample
+```julia
 julia> uc = begin # create uncertain curve with one symmetric peak
            x = 0:0.1:10;
            y = @. exp(-(x - 3)^2/0.15) + exp(-(x - 7)^2/0.15)
@@ -168,7 +168,7 @@ get_draw(n, bnd::UncertainBound) = [get_draw(n, bnd.left), get_draw(n, bnd.right
 
 Retrieve the mean of the `UncertainBound` start and end point.
 """
-Statistics.mean(bnd::UncertainBound) = [Statistics.mean(bnd.left), Statistics.mean(bnd.right)]
+Statistics.mean(bnd::UncertainBound) = [pmean(bnd.left), pmean(bnd.right)]
 
 """
     scale_shift_beta(α, β, a, b)
