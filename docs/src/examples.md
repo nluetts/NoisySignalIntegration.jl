@@ -6,6 +6,10 @@ Raman spectra are typically measured with a CCD camera where there is no obvious
 The integration works in general as outlined in the [Usage Guide](@ref). The main difference is the analysis 
 and generation of noise. Instead of a multivariate `MvGaussianNoiseModel`, we have to use a `GaussianNoiseModel`:
 
+```@setup load_path
+push!(LOAD_PATH, "../../src")
+```
+
 ```@example Raman
 # simulate a Raman spectrum with two bands
 

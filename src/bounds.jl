@@ -59,7 +59,7 @@ julia> uc = begin # create uncertain curve with one symmetric peak
        end;
 
 julia> ub = UncertainBound(5., scale_shift_beta(2, 2, 3.5, 4.0), uc)
-UncertainBound{Float64, 10000}(start = 3.12 ± 0.063, end = 6.87 ± 0.064)
+UncertainBound{Float64, 10000}(start = 3.13 ± 0.064, end = 6.88 ± 0.064)
 ```
 
 ---
@@ -168,7 +168,7 @@ get_draw(n, bnd::UncertainBound) = [get_draw(n, bnd.left), get_draw(n, bnd.right
 
 Retrieve the mean of the `UncertainBound` start and end point.
 """
-Statistics.mean(bnd::UncertainBound) = [Statistics.mean(bnd.left), Statistics.mean(bnd.right)]
+Statistics.mean(bnd::UncertainBound) = [pmean(bnd.left), pmean(bnd.right)]
 
 """
     scale_shift_beta(α, β, a, b)

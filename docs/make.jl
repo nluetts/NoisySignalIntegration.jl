@@ -1,6 +1,8 @@
 import Pkg
 Pkg.activate(@__DIR__)
 
+push!(LOAD_PATH, "../src")
+
 using Documenter
 using Plots # this needs to be imported here so that Require.jl includes animate_draws when building docs
 using NoisySignalIntegration
@@ -11,7 +13,7 @@ DocMeta.setdocmeta!(NoisySignalIntegration, :DocTestSetup, :(using NoisySignalIn
 makedocs(
     sitename="NoisySignalIntegration.jl",
     modules=[NoisySignalIntegration],
-    pages = [
+    pages=[
         "Home" => "index.md",
         "Installation" => "installation.md",
         "Package Overview" => "overview.md",
@@ -21,5 +23,6 @@ makedocs(
         "Internals" => "internals.md",
         "API reference" => "API.md"
     ],
-    highlightsig=true
+    highlightsig=true,
+    checkdocs=:none
 )

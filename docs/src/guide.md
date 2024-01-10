@@ -13,6 +13,10 @@ FTIR spectrum.
 
 Suppose our spectrum looks like the following simulation:
 
+```@setup load_path
+push!(LOAD_PATH, "../../src")
+```
+
 ```@example FTIR
 using Distributions, NoisySignalIntegration, Plots
 using Random: seed!
@@ -356,26 +360,31 @@ put into the simulation of the spectrum.
 
 We can use some basic statistical functions to characterize the result:
 
-```@example FTIR
-using StatsBase: mean, std, percentile
+!!! info "Statistics on `MonteCarloMeasurements` uncertain numbers"
+    To calculate statistics on uncertain numbers (which are implemented
+    using the `MonteCarloMeasurements` package), you have to prefix
+    the statistics function names with the letter `p`, e.g. `pmean()`,
+    `pstd()`, etc., see the
+    [`MonteCarloMeasurements` documentation](https://baggepinnen.github.io/MonteCarloMeasurements.jl/stable/).
 
-mean(ratio)
+```@example FTIR
+pmean(ratio)
 ```
 
 ```@example FTIR
-std(ratio)
+pstd(ratio)
 ```
 
 ```@example FTIR
-percentile(ratio, 2.5)
+pquantile(ratio, 0.025)
 ```
 
 ```@example FTIR
-percentile(ratio, 50)
+pquantile(ratio, 0.5)
 ```
 
 ```@example FTIR
-percentile(ratio, 97.5)
+pquantile(ratio, 0.975)
 ```
 
 We find that, considering the noise and the uncertainty in the integration

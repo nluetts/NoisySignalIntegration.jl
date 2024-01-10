@@ -204,7 +204,7 @@ get_draw(n, uc::UncertainCurve) = Curve(uc.x, get_draw.(n, uc.y))
 
 Retrieve the mean of the `UncertainCurve` `uc`.
 """
-Statistics.mean(uc::UncertainCurve) = Curve(uc.x, Statistics.mean(uc.y))
+Statistics.mean(uc::UncertainCurve) = Curve(uc.x, pmean(uc.y))
 
 
 MonteCarloMeasurements.:(±)(c::Curve, v) = UncertainCurve(c.x, c.y ± v)
