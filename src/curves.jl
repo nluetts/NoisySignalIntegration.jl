@@ -271,6 +271,10 @@ function crop(s::AbstractCurve, left, right)
     return S(s.x[i:j], s.y[i:j])
 end
 
+function lininterp(x::T, crv::Curve{T}) where {T}
+    lininterp(x, crv.x, crv.y)
+end
+
 """
 An iterator over the curve yielding datapoints as a tuple (xi, yi).
 
