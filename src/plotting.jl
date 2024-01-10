@@ -24,7 +24,7 @@ function get_left_right_points(
             j < 3,
             j > length(xs)
         ]
-    ) && throw(error("At least one integration bound is outside the support region ($(minimum(x)), $(maximum(x)))."))
+    ) && throw(error("At least one integration bound is outside the support region ($(minimum(xs)), $(maximum(xs)))."))
 
 
     if baseline_handling == "local"
