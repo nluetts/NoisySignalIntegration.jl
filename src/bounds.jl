@@ -87,15 +87,15 @@ julia> ubs = UncertainBound([3., 7.], scale_shift_beta(2, 2, 1.3, 1.5), uc)
  UncertainBound{Float64, 10000}(start = 6.3 ± 0.022, end = 7.7 ± 0.022)
 ```
 """
-struct UncertainBound{T, N}
-    left::Particles{T, N}
-    right::Particles{T, N}
+struct UncertainBound{T,N}
+    left::Particles{T,N}
+    right::Particles{T,N}
     # quantiles for local baseline subtraction and plotting
     _left_quantiles
     _right_quantiles
 end
 
-function Base.show(io::IO, c::UncertainBound{T, N}) where {T, N}
+function Base.show(io::IO, c::UncertainBound{T,N}) where {T,N}
     print(io, "UncertainBound{$T, $N}(start = $(c.left), end = $(c.right))")
 end
 
@@ -103,16 +103,16 @@ end
 # Constructors
 
 # Base constructor that injects quantiles
-function UncertainBound(left::Particles{T, N}, right::Particles{T, N}) where {T, N}
+function UncertainBound(left::Particles{T,N}, right::Particles{T,N}) where {T,N}
     qs = BOUND_QUANTILES
-    lqs, rqs = [[quantile(lr, q) for q in qs] for lr in (left, right)]
-    return UncertainBound{T, N}(left, right, lqs, rqs)
+    lqs, rqs = [[pquantile(lr, q) for q in qs] for lr in (left, right)]
+    return UncertainBound{T,N}(left, right, lqs, rqs)
 end
 
 
 # Create a left/right bound
-function UncertainBound(left::S, right::T, N::Int=10_000) where {S <: ContinuousUnivariateDistribution, T <: ContinuousUnivariateDistribution}
-    left  = Particles(N, left)
+function UncertainBound(left::S, right::T, N::Int=10_000) where {S<:ContinuousUnivariateDistribution,T<:ContinuousUnivariateDistribution}
+    left = Particles(N, left)
     right = Particles(N, right)
     return UncertainBound(left, right)
 end
@@ -122,8 +122,8 @@ end
 function UncertainBound(
     pos::Vector{T},
     width::ContinuousUnivariateDistribution,
-    uc::UncertainCurve{T, N}
-) where {T, N}
+    uc::UncertainCurve{T,N}
+) where {T,N}
 
     M = length(pos)
     left = Array{T}(undef, M, N)
@@ -141,7 +141,7 @@ function UncertainBound(
             left[i, j], right[i, j] = left_right_from_peak(uc.x, cⱼ.y, pᵢ, wⱼ)
         end
     end
-    
+
     return [UncertainBound(Particles(left[i, :]), Particles(right[i, :])) for i in 1:M]
 end
 
@@ -150,8 +150,8 @@ end
 function UncertainBound(
     pos::T,
     width::ContinuousUnivariateDistribution,
-    uc::UncertainCurve{T, N}
-) where {T, N}
+    uc::UncertainCurve{T,N}
+) where {T,N}
     bnd = UncertainBound([pos], width, uc)
     return bnd[1]
 end
@@ -177,5 +177,5 @@ Create a scaled and shifted `Beta(α, β)` distribution.
 Samples fall in the interval [`a`, `b`].
 """
 function scale_shift_beta(α, β, a, b)
-    return LocationScale(a, b - a, Beta(α, β))
+    return Beta(α, β) * (b - a) + a
 end

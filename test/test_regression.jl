@@ -1,3 +1,5 @@
+using MonteCarloMeasurements: pquantile
+
 """
 Regression tests
 
@@ -28,7 +30,7 @@ end
     dat = joinpath(@__DIR__, "t1.dat") |> read_test_data
     x, y = dat[:, 1], dat[:, 2]
     # remove numeric noise from x and make grid uniform
-    x = x[1]:(diff(x) |> mean):x[end] |> collect
+    x = x[1]:(diff(x)|>mean):x[end] |> collect
     # integration workflow
     spec = crop(Curve(x, y), 3600.0, 3680.0)
     noise = NoiseSample(crop(Curve(x, y), 3750.0, 3850.0))
@@ -36,12 +38,12 @@ end
     uspec = add_noise(spec, nm)
     bnds = UncertainBound([3620.0, 3639.0], scale_shift_beta(2, 2, 4.75, 5.25), uspec)
     areas = mc_integrate(uspec, bnds, subtract_baseline=true)
-    result = areas[2]/areas[1]
+    result = areas[2] / areas[1]
     # compare percentiles to previous results
     prev_result = [3.79e-01, 5.92e-01, 8.60e-01] # 2.5, 50 and 97.5 percentiles from https://doi.org/10.1039/C9CP00435A
     for (p, pr) in zip([2.5, 50, 97.5], prev_result)
-        r = percentile(result, p)
-        @test abs(r - pr)/r < 0.025 # here, the new implementation reproduces the previous results within 2.5%
+        r = pquantile(result, p / 100.0)
+        @test abs(r - pr) / r < 0.025 # here, the new implementation reproduces the previous results within 2.5%
     end
 end
 
@@ -52,7 +54,7 @@ end
     dat = joinpath(@__DIR__, "t2.dat") |> read_test_data
     x, y = dat[:, 1], dat[:, 2]
     # remove numeric noise from x and make grid uniform
-    x = x[1]:(diff(x) |> mean):x[end] |> collect
+    x = x[1]:(diff(x)|>mean):x[end] |> collect
     # integration workflow
     spec = crop(Curve(x, y), 2650.0, 2710.0)
     noise = NoiseSample(crop(Curve(x, y), 2500.0, 2600.0), 1)
@@ -60,17 +62,17 @@ end
     uspec = add_noise(spec, nm)
     bnds = UncertainBound([2671.0, 2685.0], scale_shift_beta(2, 2, 4.75, 5.25), uspec)
     areas = mc_integrate(uspec, bnds, subtract_baseline=true)
-    result = areas[2]/areas[1]
+    result = areas[2] / areas[1]
     # compare percentiles to previous results
     p25_pr = 2.24e-01 # previous 2.5 percentile ...
     p50_pr = 5.27e-01 # previous 50 percentile ...
     p975_pr = 9.18e-01 # previous 97.5 percentiles from https://doi.org/10.1039/C9CP00435A
     # in case of methanol-d-3-methylphenylacetylene, the percentiles are less well reproduced
     # but the agreement is still better than 7%
-    r = percentile(result, 2.5)
-    @test abs(r - p25_pr)/r ≈ 0.0739333525 rtol = 1e-7 # worst disagreement (but for smallest number, 0.24 vs. 0.22 is not that bad ...)
-    r = percentile(result, 50)
-    @test abs(r - p50_pr)/r ≈ 0.000140994154 rtol = 1e-6 # the median is very well reproduced
-    r = percentile(result, 97.5)
-    @test abs(r - p975_pr)/r ≈ 0.04008646654 rtol = 1e-7
+    r = pquantile(result, 2.5 / 100.0)
+    @test abs(r - p25_pr) / r ≈ 0.070584472 rtol = 1e-7 # worst disagreement (but for smallest number, 0.24 vs. 0.22 is not that bad ...)
+    r = pquantile(result, 50 / 100.0)
+    @test abs(r - p50_pr) / r ≈ 0.0046179427 rtol = 1e-7 # the median is very well reproduced
+    r = pquantile(result, 97.5 / 100.0)
+    @test abs(r - p975_pr) / r ≈ 0.028591554 rtol = 1e-7
 end
