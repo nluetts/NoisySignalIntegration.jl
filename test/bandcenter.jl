@@ -1,7 +1,11 @@
 module BandCenter
 
+using Distributions
+using Random: seed!
+using MonteCarloMeasurements
 using NoisySignalIntegration
-using NoisySignalIntegration: lininterp
+using NoisySignalIntegration: lininterp, _local_baseline, _endpoint_to_endpoint_baseline, get_draw
+using Plots
 using Test
 
 
@@ -33,6 +37,14 @@ function test_data_1()
     Curve(X[:, 1], X[:, 2])
 end
 
+function baseline_from_points(x1, x2, y1, y2)
+    m = (y2 - y1) / (x2 - x1)
+    b = y1 - m * x1
+    @assert b ≈ y2 - m * x2 rtol=1e-10
+    m, b
+end
+
+
 function band_center(
     curve::Curve{T},
     left::T,
@@ -59,41 +71,63 @@ function band_center(
 ) where {T<:AbstractFloat}
     yleft = lininterp(left, curve)
     yright = lininterp(right, curve)
-    m = (yright - yleft) / (right - left)
-    b = yleft - m * left
-    @assert b == yright - m * right
+    m, b = baseline_from_points(left, right, yleft, yright)
     band_center(curve, left, right, (m, b))
 end
 
 
-# function mc_bandcenter(uc::UncertainCurve{T,N}, bnds::Vector{UncertainBound{T,M}}; intfun=trapz, subtract_baseline=false, local_baseline=false) where {T,M,N}
+function mc_bandcenter(uc::UncertainCurve{T,N}, bnds::Vector{UncertainBound{T,M}}; subtract_baseline=false, local_baseline=false) where {T,M,N}
 
-#     M != N && error("Samples sizes incompatible")
-#     subtract_baseline && @warn("subtract_baseline keyword argument is deprecated, use local_baseline instead.")
-#     (subtract_baseline && local_baseline) && error("local_baseline and subtract_baseline cannot both be true.") |> throw
+    M != N && error("Samples sizes incompatible")
+    subtract_baseline && @warn("subtract_baseline keyword argument is deprecated, use local_baseline instead.")
+    (subtract_baseline && local_baseline) && error("local_baseline and subtract_baseline cannot both be true.") |> throw
 
-#     areas = Array{T}(undef, N, length(bnds))
-#     for i ∈ 1:N
-#         i % 1000 == 0 && print("Integrating draw $i/$N \r")
-#         cᵢ = get_draw(i, uc)
-#         for (j, b) in enumerate(bnds)
-#             xₗ, xᵣ = get_draw(i, b)
-#             xs, ys = uc.x, cᵢ.y
-#             areas[i, j] = intfun(xs, ys, xₗ, xᵣ)
-#             if local_baseline
-#                 areas[i, j] -= singletrapz(_local_baseline(xs, ys, xₗ, xᵣ, b)...)
-#             end
-#             if subtract_baseline
-#                 areas[i, j] -= singletrapz(_endpoint_to_endpoint_baseline(xs, ys, xₗ, xᵣ)...)
-#             end
-#         end
-#     end
-#     return [Particles(areas[:, i]) for i in 1:size(areas)[2]]
-# end
+    centers = Array{T}(undef, N, length(bnds))
+    for i ∈ 1:N
+        i % 1000 == 0 && print("Processing draw $i/$N \r")
+        cᵢ = get_draw(i, uc)
+        for (j, b) in enumerate(bnds)
+            xₗ, xᵣ = get_draw(i, b)
+            if local_baseline
+                baseline = baseline_from_points(_local_baseline(cᵢ.x, cᵢ.y, xₗ, xᵣ, b)...)
+                centers[i, j] = band_center(cᵢ, xₗ, xᵣ, baseline)
+            elseif subtract_baseline
+                centers[i, j] = band_center(cᵢ, xₗ, xᵣ, true)
+            else
+                centers[i, j] = band_center(cᵢ, xₗ, xᵣ)
 
-# function mc_bandcenter(uc::S, bnd::T; intfun=trapz, subtract_baseline=false, local_baseline=false) where {S<:UncertainCurve,T<:UncertainBound}
-#     return mc_bandcenter(uc, [bnd]; intfun=intfun, subtract_baseline=subtract_baseline, local_baseline=local_baseline)[1]
-# end
+            end
+        end
+    end
+    return [Particles(centers[:, i]) for i in 1:size(centers)[2]]
+end
+
+function mc_bandcenter(uc::S, bnd::T; subtract_baseline=false, local_baseline=false) where {S<:UncertainCurve,T<:UncertainBound}
+    return mc_bandcenter(uc, [bnd]; subtract_baseline=subtract_baseline, local_baseline=local_baseline)[1]
+end
+
+function main()
+
+    spectrum = NoisySignalIntegration.testdata_1()
+    slice_bands = crop(spectrum,  5.0,  40.0)
+    slice_noise = crop(spectrum, 40.0, 100.0)
+
+    plot(slice_bands; label="bands")
+    plot!(slice_noise; label="noise")
+
+    noise = NoiseSample(slice_noise, 3)
+    nm = fit_noise(noise)
+    uncertain_spectrum = add_noise(slice_bands, nm)
+    position = [15.0, 30.0]
+     # widths will fall in the range 2 to 3, with a maximum at 2.5
+    width_distribution = scale_shift_beta(2, 2, 3, 4)
+    # define a "width bound"
+    bds = UncertainBound(position, width_distribution, uncertain_spectrum)
+    ctrs = mc_bandcenter(uncertain_spectrum, bds, local_baseline=true)
+    mc_bandcenter(uncertain_spectrum, bds, subtract_baseline=true)
+    mc_bandcenter(uncertain_spectrum, bds)
+    uncertain_spectrum, bds, ctrs
+end
 
 function run_tests()
     crv = test_data_1()
