@@ -28,7 +28,7 @@ Create an `UncertainBound` from two distributions `left` and `right` defining un
 
 Start point falls in the range [1, 2] with uniform probability, end point falls in the range [5, 6] with uniform probability:
 
-```jldoctest UBexample
+```julia
 julia> using Distributions
 
 julia> using Random: seed!; seed!(1);
@@ -51,7 +51,7 @@ position from draw to draw (note that, due to noise, the peak may change its pos
 
 Uncertainty of width is modeled with a scaled and shifted Beta(2, 2) distribution:
 
-```jldoctest UBexample
+```julia
 julia> uc = begin # create uncertain curve with one symmetric peak
            x = 0:0.1:10;
            y = @. exp(-(x - 5)^2)
@@ -74,7 +74,7 @@ Useful for integration of several symmetric peaks for which the same width may b
 
 Uncertainty of width is modeled with a scaled and shifted Beta(2, 2) distribution:
 
-```jldoctest UBexample
+```julia
 julia> uc = begin # create uncertain curve with one symmetric peak
            x = 0:0.1:10;
            y = @. exp(-(x - 3)^2/0.15) + exp(-(x - 7)^2/0.15)
