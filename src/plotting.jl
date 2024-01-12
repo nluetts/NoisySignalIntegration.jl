@@ -72,12 +72,13 @@ end
 end
  
 
-@recipe function plot_recipe(crv::Curve{T}, left::T, right::T; subtract_baseline=false, local_baseline=false, bound=nothing) where T
-    fillrange := 0
-    fillalpha --> 0.5
-    fillcolor --> :orange
-    linewidth --> 0
-    label     --> nothing
+@recipe function plot_recipe(crv::Curve{T},
+    left::T,
+    right::T; subtract_baseline=false,
+    local_baseline=false,
+    bound=nothing,
+    draw_band_centers=false
+) where T
     
     (local_baseline && bound == nothing) && error("You have to provide a bound if local_baseline == true.") |> throw
     (subtract_baseline && local_baseline) && error("local_baseline and subtract_baseline cannot both be true.") |> throw
@@ -85,6 +86,7 @@ end
     left = T(left)
     right = T(right)
     
+    # draw area
     if subtract_baseline
         bh = "end-to-end"
     elseif local_baseline
@@ -92,8 +94,8 @@ end
     else
         bh = nothing
     end
-    
     l, r, xl, xr, yl, yr = get_left_right_points(crv.x, crv.y, left, right, bound; baseline_handling=bh)
+
     if !(local_baseline || subtract_baseline)
         x = [xl; crv.x[l+1:r-1]; xr; xr; xl]
         y = [yl; crv.y[l+1:r-1]; yr; zero(T); zero(T)]
@@ -104,10 +106,40 @@ end
         _, _, ycl, ycr = _endpoint_to_endpoint_baseline(crv.x, crv.y, left, right) # to get extra points located on the curve
         x = [xl; crv.x[l+1:r-1]; xr; xr; xl]
         y = [ycl; crv.y[l+1:r-1]; ycr; yr; yl]
-
     end
-    
-    return x, y
+
+    @series begin
+        fillrange := 0
+        fillalpha --> 0.5
+        fillcolor --> :orange
+        linewidth --> 0
+        label     --> nothing
+        x, y
+    end
+
+    if draw_band_centers
+        # draw band center
+        if subtract_baseline
+            bc = band_center(crv, xl, xr, true)
+            _, _, yl, yr = _endpoint_to_endpoint_baseline(crv.x, crv.y, xl, xr)
+            y0 = lininterp(bc, xl, xr, yl, yr)
+        elseif local_baseline
+            baseline = baseline_from_points(_local_baseline(crv.x, crv.y, xl, xr, bound)...)
+            bc = band_center(crv, xl, xr, baseline)
+            _, _, yl, yr = _local_baseline(crv.x, crv.y, xl, xr, bound)
+            y0 = lininterp(bc, xl, xr, yl, yr)
+        else
+            bc = band_center(crv, xl, xr)
+            y0 = zero(typeof(crv.y[1]))
+        end
+        y = lininterp(pmean(bc), crv)
+        @series begin
+            alpha --> 0.3
+            color --> :black
+            label --> nothing
+            [bc, bc], [y0, y]
+        end
+    end
 end
 
 

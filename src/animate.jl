@@ -21,7 +21,7 @@ otherwise a temporary file will be created.
 Further keyword arguments are passed on the `Plots.plot()` function.
 """
 function animate_draws(
-    uc::T, bnds::Vector{S}; n=20, fps=5, filepath=nothing, label="", kw...
+    uc::T, bnds::Vector{S}; n=20, fps=5, filepath=nothing, label="", draw_band_centers=false, kw...
 ) where {T<:UncertainCurve, S<:UncertainBound}
     # get minimum and maximum y value of all curve draws
     # in the selected `n` samples, used to determine the
@@ -31,7 +31,8 @@ function animate_draws(
         for mm in (minimum, maximum)
     ]
     anim = @animate for i in 1:n
-        plot(NoisySignalIntegration.get_draw(i, uc), bnds, i; label=label, ylim=(miny*0.9, maxy*1.1), kw...)
+        crv = NoisySignalIntegration.get_draw(i, uc)
+        plot(crv, bnds, i; label=label, ylim=(miny*0.9, maxy*1.1), draw_band_centers=draw_band_centers, kw...)
     end
     fp = filepath === nothing ? tempname()*".gif" : filepath
     return gif(anim, fp, fps=fps)
