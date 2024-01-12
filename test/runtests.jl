@@ -18,5 +18,6 @@ else
     include("test_bounds.jl")
     include("test_noise.jl")
     include("test_integration.jl")
+    include("test_bandcenter.jl")
     include("test_regression.jl")
 end
