@@ -9,27 +9,27 @@ using NoisySignalIntegration
 
 
 spectrum = NoisySignalIntegration.testdata_2()
-plot(spectrum, label=&quot;simulated spectrum&quot;)</code></pre><img src="a4a38615.svg" alt="Example block output"/><pre><code class="language-julia hljs"># crop the bands and the noise sample
+plot(spectrum, label=&quot;simulated spectrum&quot;)</code></pre><img src="8510fe0f.svg" alt="Example block output"/><pre><code class="language-julia hljs"># crop the bands and the noise sample
 
 bands = crop(spectrum, 10, 40) - 1 # we can directly subtract 1 from the curve to remove the offset
 noise = NoiseSample(crop(spectrum, 40, 100), 3)
 
 plot(bands; label=&quot;bands&quot;)
-plot!(noise; label=&quot;noise sample&quot;)</code></pre><img src="f371030b.svg" alt="Example block output"/><pre><code class="language-julia hljs"># build the noise model
+plot!(noise; label=&quot;noise sample&quot;)</code></pre><img src="e0188529.svg" alt="Example block output"/><pre><code class="language-julia hljs"># build the noise model
 
 nm = noise |&gt; std |&gt; GaussianNoiseModel
 
 uncertain_spectrum = add_noise(bands, nm)
 
-plot(uncertain_spectrum)</code></pre><img src="e63738b6.svg" alt="Example block output"/><pre><code class="language-julia hljs"># plot some MC draws to check
+plot(uncertain_spectrum)</code></pre><img src="cacd4b46.svg" alt="Example block output"/><pre><code class="language-julia hljs"># plot some MC draws to check
 
 bounds = UncertainBound([15., 30.], scale_shift_beta(2, 2, 4.5, 5), uncertain_spectrum)
 
-plot(uncertain_spectrum, bounds; size=(500, 600))</code></pre><img src="70ed2d40.svg" alt="Example block output"/><pre><code class="language-julia hljs"># integrate the bands and calculate the ratio
+plot(uncertain_spectrum, bounds; size=(500, 600))</code></pre><img src="6e1d918d.svg" alt="Example block output"/><pre><code class="language-julia hljs"># integrate the bands and calculate the ratio
 
 area1, area2 = mc_integrate(uncertain_spectrum, bounds)
 
-histogram(area1/area2)</code></pre><img src="ff526231.svg" alt="Example block output"/><h2 id="Mexican-hat-wavelet"><a class="docs-heading-anchor" href="#Mexican-hat-wavelet">Mexican hat wavelet</a><a id="Mexican-hat-wavelet-1"></a><a class="docs-heading-anchor-permalink" href="#Mexican-hat-wavelet" title="Permalink"></a></h2><p>This example is more of a basic sanity check for the integration algorithm. The integration of a mexican hat wavelet should yield an integral of 0. For a noisy curve with uncertain integration bounds, the results should still be compatible with an integral of 0, i.e. the 95% confidence interval of the resulting area should include the value 0. If we decrease the noise and the uncertainty in the integration bounds, the result should come closer and closer to 0 (the area distribution should become narrower while still covering the  value 0).</p><p>We go once through the regular workflow. First, we generate the test data:</p><pre><code class="language-julia hljs">using NoisySignalIntegration
+histogram(area1/area2)</code></pre><img src="28e4de10.svg" alt="Example block output"/><h2 id="Mexican-hat-wavelet"><a class="docs-heading-anchor" href="#Mexican-hat-wavelet">Mexican hat wavelet</a><a id="Mexican-hat-wavelet-1"></a><a class="docs-heading-anchor-permalink" href="#Mexican-hat-wavelet" title="Permalink"></a></h2><p>This example is more of a basic sanity check for the integration algorithm. The integration of a mexican hat wavelet should yield an integral of 0. For a noisy curve with uncertain integration bounds, the results should still be compatible with an integral of 0, i.e. the 95% confidence interval of the resulting area should include the value 0. If we decrease the noise and the uncertainty in the integration bounds, the result should come closer and closer to 0 (the area distribution should become narrower while still covering the  value 0).</p><p>We go once through the regular workflow. First, we generate the test data:</p><pre><code class="language-julia hljs">using NoisySignalIntegration
 using Plots
 using Random: seed!
 
@@ -45,14 +45,14 @@ end
 
 noisy_mh_curve = mexican_hat_curve(MvGaussianNoiseModel(0.1, 0.05, 0.5))
 
-plot(noisy_mh_curve; label=&quot;noisy mexican hat&quot;)</code></pre><img src="2000c2a4.svg" alt="Example block output"/><p>Analysis of noise:</p><pre><code class="language-julia hljs">noise = NoiseSample(crop(noisy_mh_curve, 5, 100))
-plot(noise; label=&quot;noise sample&quot;)</code></pre><img src="3d37ba7f.svg" alt="Example block output"/><pre><code class="language-julia hljs">noise_model = fit_noise(noise)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">MvGaussianNoiseModel(α = 0.04316276221999562, λ = 0.633641569654263)
-</code></pre><pre><code class="language-julia hljs">plotautocovfit(noise, noise_model)</code></pre><img src="9c41189e.svg" alt="Example block output"/><p>Check that generated noise samples look realistic:</p><pre><code class="language-julia hljs">plot(noise, noise_model; size=(500, 600))</code></pre><img src="8523b3d9.svg" alt="Example block output"/><p>Definition of integration bounds:</p><pre><code class="language-julia hljs">uncertain_mh_curve = add_noise(noisy_mh_curve, noise_model)
+plot(noisy_mh_curve; label=&quot;noisy mexican hat&quot;)</code></pre><img src="302d87d2.svg" alt="Example block output"/><p>Analysis of noise:</p><pre><code class="language-julia hljs">noise = NoiseSample(crop(noisy_mh_curve, 5, 100))
+plot(noise; label=&quot;noise sample&quot;)</code></pre><img src="57f33116.svg" alt="Example block output"/><pre><code class="language-julia hljs">noise_model = fit_noise(noise)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">MvGaussianNoiseModel(α = 0.04316276221999562, λ = 0.633641569654263)
+</code></pre><pre><code class="language-julia hljs">plotautocovfit(noise, noise_model)</code></pre><img src="a71d92c8.svg" alt="Example block output"/><p>Check that generated noise samples look realistic:</p><pre><code class="language-julia hljs">plot(noise, noise_model; size=(500, 600))</code></pre><img src="3e620288.svg" alt="Example block output"/><p>Definition of integration bounds:</p><pre><code class="language-julia hljs">uncertain_mh_curve = add_noise(noisy_mh_curve, noise_model)
 # definition using distributions for start and end point
 bnd = UncertainBound(scale_shift_beta(2, 2, -5, -4), scale_shift_beta(2, 2, 4, 5))
-plot(uncertain_mh_curve, bnd; size=(500, 600), xlim=(-25, 25))</code></pre><img src="19ea8fde.svg" alt="Example block output"/><p>Integration:</p><pre><code class="language-julia hljs">area = mc_integrate(uncertain_mh_curve, bnd)
+plot(uncertain_mh_curve, bnd; size=(500, 600), xlim=(-25, 25))</code></pre><img src="e04ec37d.svg" alt="Example block output"/><p>Integration:</p><pre><code class="language-julia hljs">area = mc_integrate(uncertain_mh_curve, bnd)
 
-histogram(area; label=&quot;area&quot;)</code></pre><img src="6227d8a1.svg" alt="Example block output"/><p>As expected, the mean of the derived areas is close to zero.</p><p>Now we look what happens if we successively decrease the noise level and uncertainty in the integration window position. We define a function that covers the complete integration workflow for a certain scaling factor <code>f</code> that controls the noise level and variability of integration windows:</p><pre><code class="language-julia hljs">function analyze_noisy_mh(f)
+histogram(area; label=&quot;area&quot;)</code></pre><img src="a141ec0d.svg" alt="Example block output"/><p>As expected, the mean of the derived areas is close to zero.</p><p>Now we look what happens if we successively decrease the noise level and uncertainty in the integration window position. We define a function that covers the complete integration workflow for a certain scaling factor <code>f</code> that controls the noise level and variability of integration windows:</p><pre><code class="language-julia hljs">function analyze_noisy_mh(f)
     noisy_mh_curve = mexican_hat_curve(MvGaussianNoiseModel(0.01, 0.05*f, 0.1))
     noise = NoiseSample(crop(noisy_mh_curve, 5, 100))
     noise_model = fit_noise(noise)
@@ -72,13 +72,13 @@ histogram(
     linetype=:stephist,
     fill=true,
     xlim=(-1, 1)
-)</code></pre><img src="f558b217.svg" alt="Example block output"/><p>As we can see, with decreasing uncertainty, the result comes closer and closer to 0.</p><h2 id="example_propagation"><a class="docs-heading-anchor" href="#example_propagation">Error propagation</a><a id="example_propagation-1"></a><a class="docs-heading-anchor-permalink" href="#example_propagation" title="Permalink"></a></h2><p>Since integration results are returned as <a href="https://baggepinnen.github.io/MonteCarloMeasurements.jl/stable/api/#MonteCarloMeasurements.Particles">Particle</a> objects from the <a href="https://github.com/baggepinnen/MonteCarloMeasurements.jl">MonteCarloMeasurements.jl</a> package (see <a href="../internals/#Internals">Internals</a>), calculating combined uncertainties, for example when deriving abundance ratios from band integrals and calculated intensities, is rather simple. Consider the following spectrum with four bands:</p><pre><code class="language-julia hljs"># simulate an FTIR spectrum with 4 bands
+)</code></pre><img src="26649604.svg" alt="Example block output"/><p>As we can see, with decreasing uncertainty, the result comes closer and closer to 0.</p><h2 id="example_propagation"><a class="docs-heading-anchor" href="#example_propagation">Error propagation</a><a id="example_propagation-1"></a><a class="docs-heading-anchor-permalink" href="#example_propagation" title="Permalink"></a></h2><p>Since integration results are returned as <a href="https://baggepinnen.github.io/MonteCarloMeasurements.jl/stable/api/#MonteCarloMeasurements.Particles">Particle</a> objects from the <a href="https://github.com/baggepinnen/MonteCarloMeasurements.jl">MonteCarloMeasurements.jl</a> package (see <a href="../internals/#Internals">Internals</a>), calculating combined uncertainties, for example when deriving abundance ratios from band integrals and calculated intensities, is rather simple. Consider the following spectrum with four bands:</p><pre><code class="language-julia hljs"># simulate an FTIR spectrum with 4 bands
 
 using Plots
 using NoisySignalIntegration
 
 spectrum = NoisySignalIntegration.testdata_4()
-plot(spectrum, label=&quot;simulated spectrum&quot;)</code></pre><img src="96a6478b.svg" alt="Example block output"/><p>Let&#39;s assume that these bands correspond to 4 different chemical species (species A, B, C and D from left to right) and we know from quantum chemical calculations what the intensity of each band should be per unit of substance. With this information, we can calculate abundance ratios <span>$R_{xy}$</span> likes so:</p><p class="math-container">\[R_{xy} = \frac{A_x / I_x}{A_y / I_y}\]</p><p>Where <span>$A$</span> is the band integral and <span>$I$</span> the calculated intensity for species <span>$x$</span> or <span>$y$</span>, respectively.</p><p>The uncertainty calculation for the abundance ratio is not straightforward if the distribution of the integrals is asymmetric (which can easily be the case for larger uncertainties). Using <code>MonteCarloMeasurement</code> makes it rather simple, however.</p><p>First, we integrate with <code>NoisySignalIntegration</code>:</p><pre><code class="language-julia hljs"># crop spectrum and noise
+plot(spectrum, label=&quot;simulated spectrum&quot;)</code></pre><img src="774633ad.svg" alt="Example block output"/><p>Let&#39;s assume that these bands correspond to 4 different chemical species (species A, B, C and D from left to right) and we know from quantum chemical calculations what the intensity of each band should be per unit of substance. With this information, we can calculate abundance ratios <span>$R_{xy}$</span> likes so:</p><p class="math-container">\[R_{xy} = \frac{A_x / I_x}{A_y / I_y}\]</p><p>Where <span>$A$</span> is the band integral and <span>$I$</span> the calculated intensity for species <span>$x$</span> or <span>$y$</span>, respectively.</p><p>The uncertainty calculation for the abundance ratio is not straightforward if the distribution of the integrals is asymmetric (which can easily be the case for larger uncertainties). Using <code>MonteCarloMeasurement</code> makes it rather simple, however.</p><p>First, we integrate with <code>NoisySignalIntegration</code>:</p><pre><code class="language-julia hljs"># crop spectrum and noise
 bands = crop(spectrum, 0, 100)
 noise = NoiseSample(crop(spectrum, 100, 200), 3)
 # retrieve noise model
@@ -93,7 +93,7 @@ A_A, A_B, A_C, A_D = areas</code></pre><pre class="documenter-example-output"><c
  0.98 ± 0.17
  2.13 ± 0.17
  3.02 ± 0.17
- 1.07 ± 0.17</code></pre><p>We inspect the Monte-Carlo draws visually:</p><pre><code class="language-julia hljs">plot(uspec, bnds; size=(500, 600), local_baseline=true)</code></pre><img src="9345dc87.svg" alt="Example block output"/><p>We put in our calculated intensities and their uncertainties (see <a href="https://baggepinnen.github.io/MonteCarloMeasurements.jl/stable/api/#MonteCarloMeasurements.:..-Tuple{Any,Any}"><code>MonteCarloMeasurements.jl</code> documentation</a>):</p><pre><code class="language-julia hljs">using MonteCarloMeasurements
+ 1.07 ± 0.17</code></pre><p>We inspect the Monte-Carlo draws visually:</p><pre><code class="language-julia hljs">plot(uspec, bnds; size=(500, 600), local_baseline=true)</code></pre><img src="8312aaa3.svg" alt="Example block output"/><p>We put in our calculated intensities and their uncertainties (see <a href="https://baggepinnen.github.io/MonteCarloMeasurements.jl/stable/api/#MonteCarloMeasurements.:..-Tuple{Any,Any}"><code>MonteCarloMeasurements.jl</code> documentation</a>):</p><pre><code class="language-julia hljs">using MonteCarloMeasurements
 
 I_A = @samples 10_000   1 .. 1.1  # uniform distribution (.. operator)
 I_B = @samples 10_000 1.50 ± 0.2  # normal distribution (± operator)
@@ -114,7 +114,7 @@ R_DA = (A_D/I_D) / (A_A/I_A)</code></pre><p>This results in the following, displ
     ylim=(0, 2.5),
     fill=true,
     layout=(3, 1)
-)</code></pre><img src="636568dc.svg" alt="Example block output"/><p>Clearly, the resulting distributions are asymmetric and non-Gaussian, so the standard deviations do not inform about the level of confidence. You can use <a href="https://juliastats.org/StatsBase.jl/stable/"><code>StatsBase.jl</code></a> to calculate percentiles and confidence intervals:</p><pre><code class="language-julia hljs">using StatsBase: percentile
+)</code></pre><img src="9033951d.svg" alt="Example block output"/><p>Clearly, the resulting distributions are asymmetric and non-Gaussian, so the standard deviations do not inform about the level of confidence. You can use <a href="https://juliastats.org/StatsBase.jl/stable/"><code>StatsBase.jl</code></a> to calculate percentiles and confidence intervals:</p><pre><code class="language-julia hljs">using StatsBase: percentile
 
 [percentile(R_BA.particles, p) for p in (2.5, 50, 97.5)]</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">3-element Vector{Float64}:
  0.9985307196492743
@@ -126,11 +126,11 @@ let
     x = [rep(&quot;B:A&quot;) rep(&quot;C:A&quot;) rep(&quot;D:A&quot;)]
     y = [R_BA.particles R_CA.particles R_DA.particles]
     boxplot(x, y, ylabel=&quot;abundance ratio&quot;, label=nothing)
-end</code></pre><img src="7d7d7d86.svg" alt="Example block output"/><p>Or a violin plot:</p><pre><code class="language-julia hljs">using StatsPlots: violin
+end</code></pre><img src="d54e5445.svg" alt="Example block output"/><p>Or a violin plot:</p><pre><code class="language-julia hljs">using StatsPlots: violin
 
 let
     rep(str) = repeat([str], length(R_BA.particles))
     x = [rep(&quot;B:A&quot;) rep(&quot;C:A&quot;) rep(&quot;D:A&quot;)]
     y = [R_BA.particles R_CA.particles R_DA.particles]
     violin(x, y, ylabel=&quot;abundance ratio&quot;, label=nothing)
-end</code></pre><img src="2d0e7201.svg" alt="Example block output"/></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../guide/">« Usage Guide</a><a class="docs-footer-nextpage" href="../baseline/">Baseline Handling »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="auto">Automatic (OS)</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.2.1 on <span class="colophon-date" title="Wednesday 10 January 2024 12:55">Wednesday 10 January 2024</span>. Using Julia version 1.10.0.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+end</code></pre><img src="f0b2abf7.svg" alt="Example block output"/></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../guide/">« Usage Guide</a><a class="docs-footer-nextpage" href="../baseline/">Baseline Handling »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="auto">Automatic (OS)</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.2.1 on <span class="colophon-date" title="Friday 12 January 2024 19:35">Friday 12 January 2024</span>. Using Julia version 1.10.0.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
