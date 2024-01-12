@@ -60,7 +60,7 @@ trapz
 
 ```@docs
 mc_bandcenter
-````
+```
 
 ## Macros
 

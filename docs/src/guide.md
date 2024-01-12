@@ -333,7 +333,7 @@ NoisySignalIntegration.animate_draws(
 )
 ```
 
-The vertical lines are band centers (see [`mc_bandcenter`](@red)), which are
+The vertical lines are band centers (see [`mc_bandcenter`](@ref)), which are
 drawn if the keyword argument `draw_band_centers` is true.
 
 ## Running the integration algorithm
