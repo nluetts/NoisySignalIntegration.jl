@@ -56,6 +56,12 @@ mc_integrate
 trapz
 ```
 
+### Band Centers
+
+```@docs
+mc_bandcenter
+````
+
 ## Macros
 
 ```@docs

@@ -328,9 +328,13 @@ to visualize the Monte-Carlo draws in a gif animation:
 NoisySignalIntegration.animate_draws(
     uncertain_spectrum, [wb_1, wb_2];
     size=(300, 150),
-    local_baseline=true
+    local_baseline=true,
+    draw_band_centers=true,
 )
 ```
+
+The vertical lines are band centers (see [`mc_bandcenter`](@red)), which are
+drawn if the keyword argument `draw_band_centers` is true.
 
 ## Running the integration algorithm
 
