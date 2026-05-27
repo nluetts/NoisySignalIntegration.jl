@@ -1,6 +1,6 @@
 name = "NoisySignalIntegration"
 uuid = "bdbab1c0-76f6-415c-8ec7-0d0463b9bd16"
-version = "1.0.0-rc1"
+version = "1.1.0-rc1"
 authors = ["Nils Luettschwager <nluetts@gwdg.de>"]
 
 [deps]

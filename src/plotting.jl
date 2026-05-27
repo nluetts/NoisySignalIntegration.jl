@@ -77,7 +77,8 @@ end
     right::T; subtract_baseline=false,
     local_baseline=false,
     bound=nothing,
-    draw_band_centers=false
+    draw_band_centers=false,
+    draw_fwhm=false,
 ) where T
     
     (local_baseline && bound == nothing) && error("You have to provide a bound if local_baseline == true.") |> throw
@@ -138,6 +139,13 @@ end
             color --> :black
             label --> nothing
             [bc, bc], [y0, y]
+        end
+    end
+
+    if draw_fwhm
+        baseline = local_baseline ? _local_baseline(crv.x, crv.y, xl, xr, bound) : nothing
+        @series begin
+            fwhm(crv, xl, xr, baseline)
         end
     end
 end
@@ -316,3 +324,45 @@ MonteCarloMeasurements.mcplot(uc::UncertainCurve; draws=10, alpha=0.5, kw...) = 
 # --------------------------------------------
 
 @recipe plot_repice(::Type{T}, ub::T) where {T <: UncertainBound} = [ub.left.particles, ub.right.particles]
+
+# --------------------------------------------
+# enable plotting of FWHMs
+# --------------------------------------------
+
+@recipe function plot_recipe(f::FWHM{T}) where {T<:Number}
+    # vertical line at peak maximum
+    @series begin
+        color := :gray
+        label := nothing
+        linestyle := :dot
+        [f._peak_position, f._peak_position], [f._half_maximum_offset, f._half_maximum_offset + 2*f._half_maximum]
+    end
+    # horizontal line marking fwhm
+    @series begin
+        color := :gray
+        label := nothing
+        linewidth --> 2.0
+        [f._start_position, f._start_position + f.full_width], [f._half_maximum + f._half_maximum_offset, f._half_maximum + f._half_maximum_offset]
+    end
+    # local baseline, if set
+    if !isnothing(f._local_baseline)
+        @series begin
+            color := :gray
+            label := nothing
+            linestyle := :dot
+            [f._local_baseline[1], f._local_baseline[2]], [f._local_baseline[3], f._local_baseline[4]]
+        end
+    end
+end
+
+@recipe function plot_recipe(curve::Curve{T}, fs::Vector{FWHM{T}}) where {T<:Number}
+    for f in fs
+        @series begin
+            f
+        end
+    end
+    @series begin
+        color --> :blue
+        curve
+    end
+end

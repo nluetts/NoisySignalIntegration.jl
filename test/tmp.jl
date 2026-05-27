@@ -1,5 +1,5 @@
 using NoisySignalIntegration
-using NoisySignalIntegration: get_draw, _local_baseline, lininterp
+using NoisySignalIntegration: get_draw, _local_baseline, lininterp, get_left_right_points, _endpoint_to_endpoint_baseline
 using MonteCarloMeasurements
 using Plots
 using RecipesBase
@@ -7,6 +7,8 @@ using Random
 using Debugger
 
 module FWHMmod
+
+using NoisySignalIntegration: Curve, UncertainCurve, UncertainBound
 
 struct FWHM{T}
     full_width::T
@@ -17,22 +19,23 @@ struct FWHM{T}
     _half_maximum_offset::T
 end
 
-struct UncertainFWHM{T}
-    samples::Vector{FWHM{T}}
+function value(fwhm::FWHM{T}) :: T where {T}
+    fwhm.full_width
 end
-
-function value(uf::UncertainFWHM{T}) :: MonteCarloMeasurements.Particles{T, N} where {T,N}
-    particles([f.full_width for f in uf.samples])
-end
-
 
 end
 
-function mc_fwhm(uc::UncertainCurve{T,N}, bnds::Vector{UncertainBound{T,M}}; local_baseline=false) where {T,M,N}
+using .FWHMmod: FWHM, value
 
-    M != N && error("Samples sizes incompatible")
+function mc_fwhm(
+    uc::UncertainCurve{T,N},
+    bnds::Vector{UncertainBound{T,M}};
+    local_baseline=false
+) :: Vector{Particles{T}} where {T,M,N}
 
-    widths = Array{FWHMmod.FWHM{T}}(undef, N, length(bnds))
+    M != N && error("Samples sizes of bounds and uncertain curve incompatible ($N != $M)")
+
+    widths = Array{Float64}(undef, N, length(bnds))
     for i ∈ 1:N
         i % 1000 == 0 && print("Processing draw $i/$N \r")
         cᵢ = get_draw(i, uc)
@@ -40,14 +43,15 @@ function mc_fwhm(uc::UncertainCurve{T,N}, bnds::Vector{UncertainBound{T,M}}; loc
             xₗ, xᵣ = get_draw(i, b)
             if local_baseline
                 baseline = _local_baseline(cᵢ.x, cᵢ.y, xₗ, xᵣ, b)
-                widths[i, j] = fwhm(cᵢ, xₗ, xᵣ, baseline)
+                widths[i, j] = fwhm(cᵢ, xₗ, xᵣ, baseline) |> value
             else
-                widths[i, j] = fwhm(cᵢ, xₗ, xᵣ)
+                widths[i, j] = fwhm(cᵢ, xₗ, xᵣ) |> value
 
             end
         end
     end
-    return [FWHMmod.UncertainFWHM(ws) for ws in eachcol(widths)]
+
+    return [Particles(widths[:, i]) for (i, _ws) in enumerate(eachcol(widths))]
 end
 
 function fwhm(
@@ -86,26 +90,12 @@ function fwhm(
     for i in imx:(length(ys) - 1)
         yi = ys[i] - ybx
         yj = ys[i + 1] - ybx
-        # label = "$(([yi, hm, yj] .|> x -> round(x, digits=3)))"
-        # println(label)
-        # plot(xs, ys, ylims=(1, 2.1), label=label)
-        # plot!([left, right], [hm + ybx, hm + ybx])
-        # scatter!([xs[i], xs[i + 1]], [yi + ybx, yj + ybx])
-        # frame(anim)
         if yj < hm <= yi 
             # find x-value that corresponds best to max/2
             x_fwhm_right = lininterp(hm, yi, yj, xs[i], xs[i + 1])
-            # scatter!([x_fwhm_right], [hm + ybx])
-            # frame(anim)
             break
         end
     end
-
-    # gif(anim, "/tmp/tmp.gif", fps=25, loop=1)
-
-    # p = plot(xs, ys)
-    # plot!(p, [x_fwhm_left, x_fwhm_right], [hm + ybx, hm + ybx])
-    # display(p)
 
     full_width = x_fwhm_right - x_fwhm_left
     FWHMmod.FWHM(full_width, baseline, peak_position, x_fwhm_left, hm, ybx)
@@ -149,46 +139,80 @@ end
     end
 end
 
-@recipe function plot_recipe(
-    uc::UncertainCurve{T, N},
-    fwhms::Vector{FWHMmod.FWHM{T}}
-    ;
-    draws=3,
-    subtract_baseline=true
-) where {T, N}
+@recipe function plot_recipe(crv::Curve{T},
+    left::T,
+    right::T; subtract_baseline=false,
+    local_baseline=false,
+    bound=nothing,
+    draw_band_centers=false,
+    draw_fwhm=false,
+) where T
+    
+    (local_baseline && bound == nothing) && error("You have to provide a bound if local_baseline == true.") |> throw
+    (subtract_baseline && local_baseline) && error("local_baseline and subtract_baseline cannot both be true.") |> throw
 
-    legend := :none
-    layout := (draws + 1, 1)
-    link := :both
-    size --> (500, 600)
+    left = T(left)
+    right = T(right)
     
-    mean_uc = mean(uc)
-    
-    for i ∈ 0:draws
-        for (j, b) in enumerate(bnds)
-            @series begin
-                fillcolor := j % 2 == 1 ? :red : :orange
-                subplot := i + 1
-                bound := b
-                if i == 0
-                    mean_uc, mean(b)...
-                else
-                    get_draw(i, uc), get_draw(i, b)...
-                end
-            end
+    # draw area
+    if subtract_baseline
+        bh = "end-to-end"
+    elseif local_baseline
+        bh = "local"
+    else
+        bh = nothing
+    end
+    l, r, xl, xr, yl, yr = get_left_right_points(crv.x, crv.y, left, right, bound; baseline_handling=bh)
+
+    if !(local_baseline || subtract_baseline)
+        x = [xl; crv.x[l+1:r-1]; xr; xr; xl]
+        y = [yl; crv.y[l+1:r-1]; yr; zero(T); zero(T)]
+    elseif subtract_baseline
+        x = [xl; crv.x[l+1:r-1]; xr; xl]
+        y = [yl; crv.y[l+1:r-1]; yr; yl]
+    else
+        _, _, ycl, ycr = _endpoint_to_endpoint_baseline(crv.x, crv.y, left, right) # to get extra points located on the curve
+        x = [xl; crv.x[l+1:r-1]; xr; xr; xl]
+        y = [ycl; crv.y[l+1:r-1]; ycr; yr; yl]
+    end
+
+    @series begin
+        fillrange := 0
+        fillalpha --> 0.5
+        fillcolor --> :orange
+        linewidth --> 0
+        label     --> nothing
+        x, y
+    end
+
+    if draw_band_centers
+        # draw band center
+        if subtract_baseline
+            bc = band_center(crv, xl, xr, true)
+            _, _, yl, yr = _endpoint_to_endpoint_baseline(crv.x, crv.y, xl, xr)
+            y0 = lininterp(bc, xl, xr, yl, yr)
+        elseif local_baseline
+            baseline = baseline_from_points(_local_baseline(crv.x, crv.y, xl, xr, bound)...)
+            bc = band_center(crv, xl, xr, baseline)
+            _, _, yl, yr = _local_baseline(crv.x, crv.y, xl, xr, bound)
+            y0 = lininterp(bc, xl, xr, yl, yr)
+        else
+            bc = band_center(crv, xl, xr)
+            y0 = zero(typeof(crv.y[1]))
         end
+        y = lininterp(pmean(bc), crv)
         @series begin
-            subplot := i + 1
-            if i == 0
-                # mean spectrum
-                seriescolor := SECONDARY_COLOR
-                yguide := "mean"
-                mean_uc
-            else
-                seriescolor := PRIMARY_COLOR
-                yguide := "sample $(i)"
-                get_draw(i, uc)
-            end
+            alpha --> 0.3
+            color --> :black
+            label --> nothing
+            [bc, bc], [y0, y]
+        end
+    end
+
+    if draw_fwhm
+        baseline = local_baseline ? _local_baseline(crv.x, crv.y, xl, xr, bound) : nothing
+        @series begin
+            fwhm(crv, xl, xr, baseline)
         end
     end
 end
@@ -216,6 +240,7 @@ function main()
 
     # fs = mc_fwhm(uncertain_spectrum, bds; local_baseline=true)
     # return fs
+    return uncertain_spectrum, bds
 
     anim = @animate for k in 1:30
         spectrum_draw_k = get_draw(k, uncertain_spectrum)

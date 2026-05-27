@@ -21,6 +21,7 @@ include("bounds.jl")
 include("noise.jl")
 include("integration.jl")
 include("bandcenter.jl")
+include("fwhm.jl")
 include("plotting.jl")
 include("testdata.jl")
 
@@ -41,6 +42,7 @@ export
     fit_noise,
     get_cov,
     mc_bandcenter,
+    mc_fwhm,
     mc_integrate,
     mean,
     plotautocovfit,
