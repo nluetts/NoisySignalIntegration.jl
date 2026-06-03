@@ -1,28 +1,43 @@
 using NoisySignalIntegration
-using NoisySignalIntegration: Curve, UncertainCurve, UncertainBound
+using NoisySignalIntegration: Curve, UncertainCurve, UncertainBound, fwhm
+using Test
 using Random
-using Plots
 
-function main()
-    Random.seed!(42)
-    spectrum = NoisySignalIntegration.testdata_1()
-    slice_bands = crop(spectrum,  5.0,  40.0)
-    slice_noise = crop(spectrum, 40.0, 100.0)
+# Widths of test spectrum
+W1 = 2.0
+W2 = 1.0
+W3 = 1.5
 
-    noise = NoiseSample(slice_noise, 3)
-    nm = fit_noise(noise)
-    uncertain_spectrum = add_noise(slice_bands, nm)
+# Gaussian functions defined by height and fwhm
+function gauss(x, x0, A, fwhm)
+    sigma = fwhm / sqrt(8*log(2))
+    @. A * exp(-(x - x0)^2 / (2 * sigma^2))
+end
+
+# Draw three Gaussians
+function test_spectrum()
+    xs = collect(0:0.025:100)
+    ys = zeros(length(xs))
+    ys += gauss(xs, 20, 1, W1)
+    ys += gauss(xs, 50, 2.5, W2)
+    ys += gauss(xs, 70, 1.5, W3)
+    Curve(xs, ys)
+end
 
 
-    # return plot(spectrum, uncertain_spectrum)
+@testset "fwhm of simple gaussian curves" begin
+    @info "Testing FWHM determination of simple Gaussians ..."
+    crv = test_spectrum()
+    @test fwhm(crv, 10., 30.).full_width == W1
+    @test fwhm(crv, 40., 60.).full_width == W2
+    @test fwhm(crv, 60., 80.).full_width == W3
+end
 
-    
-    position = [15.0, 30.0]
-    # widths will fall in the range 2 to 3, with a maximum at 2.5
-    width_distribution = scale_shift_beta(2, 2, 3, 4)
-    # define a "width bound"
-    bds = UncertainBound(position, width_distribution, uncertain_spectrum)
-    plot(uncertain_spectrum, bds; local_baseline=true, draw_fwhm=true) |> display
-
-    return uncertain_spectrum, bds
+@testset "fwhm of simple gaussian curves" begin
+    @info "Testing FWHM determination of simple Gaussians on slope ..."
+    crv = test_spectrum()
+    crv += crv.x * 0.001
+    @test fwhm(crv, 10., 30.; local_baseline=true).full_width == W1
+    @test fwhm(crv, 40., 60.; local_baseline=true).full_width == W2
+    @test fwhm(crv, 60., 80.; local_baseline=true).full_width == W3
 end
