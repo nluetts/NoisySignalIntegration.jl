@@ -2,10 +2,10 @@ module NoisySignalIntegration
 
 using Distributions:        ContinuousUnivariateDistribution
 using Distributions:        MvNormal, Beta, LocationScale
-using LsqFit:               curve_fit
+using LsqFit:               curve_fit, coef
 using MonteCarloMeasurements
 using Polynomials:          fit
-using Printf:               @sprintf
+using Printf:               @sprintf, @printf
 using Random:               seed!
 using RecipesBase
 using Requires
@@ -21,7 +21,7 @@ include("bounds.jl")
 include("noise.jl")
 include("integration.jl")
 include("bandcenter.jl")
-include("fwhm.jl")
+include("fit.jl")
 include("plotting.jl")
 include("testdata.jl")
 
@@ -42,7 +42,7 @@ export
     fit_noise,
     get_cov,
     mc_bandcenter,
-    mc_fwhm,
+    mc_fit,
     mc_integrate,
     mean,
     plotautocovfit,

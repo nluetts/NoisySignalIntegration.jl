@@ -8,22 +8,22 @@ function get_left_right_points(
     ys::AbstractArray{T},
     xₗ::T,
     xᵣ::T,
-    b::Union{Nothing, UncertainBound}
+    b::Union{Nothing,UncertainBound}
     ;
     baseline_handling=nothing
 ) where {T<:AbstractFloat}
-    
+
     xₗ, xᵣ = xₗ < xᵣ ? (xₗ, xᵣ) : (xᵣ, xₗ)
-    
+
     i = searchsortedfirst(xs, xₗ)
     j = searchsortedfirst(xs, xᵣ)
     any(
         [
-            i < 2,
-            i > length(xs) - 1,
-            j < 3,
-            j > length(xs)
-        ]
+        i < 2,
+        i > length(xs) - 1,
+        j < 3,
+        j > length(xs)
+    ]
     ) && throw(error("At least one integration bound is outside the support region ($(minimum(xs)), $(maximum(xs)))."))
 
 
@@ -53,9 +53,9 @@ end
     layout := (draws + 1, 1)
     link := :both
     size --> (500, 600)
-    
+
     delete!(plotattributes, :draws)
-  
+
     for i ∈ 0:draws
         @series begin
             subplot := i + 1
@@ -70,7 +70,7 @@ end
         end
     end
 end
- 
+
 
 @recipe function plot_recipe(crv::Curve{T},
     left::T,
@@ -80,13 +80,13 @@ end
     draw_band_centers=false,
     draw_fwhm=false,
 ) where T
-    
+
     (local_baseline && bound == nothing) && error("You have to provide a bound if local_baseline == true.") |> throw
     (subtract_baseline && local_baseline) && error("local_baseline and subtract_baseline cannot both be true.") |> throw
 
     left = T(left)
     right = T(right)
-    
+
     # draw area
     if subtract_baseline
         bh = "end-to-end"
@@ -114,7 +114,7 @@ end
         fillalpha --> 0.5
         fillcolor --> :orange
         linewidth --> 0
-        label     --> nothing
+        label --> nothing
         x, y
     end
 
@@ -151,7 +151,7 @@ end
 end
 
 
-@recipe function plot_recipe(crv::Curve{T}, bnds::Vector{UncertainBound{T, N}}, draw::Int) where {T, N}
+@recipe function plot_recipe(crv::Curve{T}, bnds::Vector{UncertainBound{T,N}}, draw::Int) where {T,N}
     @series begin
         crv
     end
@@ -166,7 +166,7 @@ end
 end
 
 
-@recipe function plot_recipe(crv::Curve{T}, bnd::UncertainBound{T, N}, draw::Int) where {T, N}
+@recipe function plot_recipe(crv::Curve{T}, bnd::UncertainBound{T,N}, draw::Int) where {T,N}
     @series begin
         crv, [bnd], draw
     end
@@ -175,20 +175,20 @@ end
 
 # plot draws of curves alongside with draws of bounds
 @recipe function plot_recipe(
-    uc::UncertainCurve{T, N},
-    bnds::Vector{UncertainBound{T, N}}
+    uc::UncertainCurve{T,N},
+    bnds::Vector{UncertainBound{T,N}}
     ;
     draws=3,
     subtract_baseline=true
-) where {T, N}
+) where {T,N}
 
     legend := :none
     layout := (draws + 1, 1)
     link := :both
     size --> (500, 600)
-    
+
     mean_uc = mean(uc)
-    
+
     for i ∈ 0:draws
         for (j, b) in enumerate(bnds)
             @series begin
@@ -220,11 +220,11 @@ end
 
 
 @recipe function plot_recipe(
-    uc::UncertainCurve{T, N},
-    bnd::UncertainBound{T, N}
+    uc::UncertainCurve{T,N},
+    bnd::UncertainBound{T,N}
     ;
     draws=3
-) where {T, N}
+) where {T,N}
     draws := draws
     uc, [bnd]
 end
@@ -235,7 +235,7 @@ end
 # enable plotting of noise sample draws
 # --------------------------------------
 
-@recipe function plot_recipe(x::Vector{T}, nm::AbstractNoiseModel; draws=3, subplot_offset=0) where {T <: Real}
+@recipe function plot_recipe(x::Vector{T}, nm::AbstractNoiseModel; draws=3, subplot_offset=0) where {T<:Real}
     draws < 0 && throw(ArgumentError("Number of samples must be > 0."))
 
     layout --> (draws, 1)
@@ -264,22 +264,22 @@ end
 
 
 @recipe function plot_recipe(ns::NoiseSample, nm::AbstractNoiseModel; draws=3)
-    
-    layout --> (draws+1, 1)
+
+    layout --> (draws + 1, 1)
     legend --> :none
     link --> :both
     size --> (500, 600)
 
     @series begin
-            subplot := 1
-            yguide := "input"
-            seriescolor --> SECONDARY_COLOR
-            ns 
+        subplot := 1
+        yguide := "input"
+        seriescolor --> SECONDARY_COLOR
+        ns
     end
     @series begin
-            subplot_offset := 1
-            draws := draws
-            ns.x, nm
+        subplot_offset := 1
+        draws := draws
+        ns.x, nm
     end
 end
 
@@ -300,15 +300,15 @@ Plot results of autocovariance fit.
 
     xguide := "lag"
     yguide := "auto-covariance"
-    
+
     lags, acov = estimate_autocov(ns)
-    
+
     @series begin
         label := "estimate"
         seriescolor --> PRIMARY_COLOR
         lags, acov
     end
-    
+
     @series begin
         label := @sprintf "fit (α = %.3e, λ = %.3e)" nm.α nm.λ
         seriescolor --> SECONDARY_COLOR
@@ -323,46 +323,45 @@ MonteCarloMeasurements.mcplot(uc::UncertainCurve; draws=10, alpha=0.5, kw...) = 
 # enable plotting of UncertainBound histograms
 # --------------------------------------------
 
-@recipe plot_repice(::Type{T}, ub::T) where {T <: UncertainBound} = [ub.left.particles, ub.right.particles]
+@recipe plot_repice(::Type{T}, ub::T) where {T<:UncertainBound} = [ub.left.particles, ub.right.particles]
 
 # --------------------------------------------
-# enable plotting of FWHMs
+# enable plotting of Fits
 # --------------------------------------------
 
-@recipe function plot_recipe(f::FWHM{T}) where {T<:Number}
-    # vertical line at peak maximum
+@recipe function plot_recipe(crv::Curve{T}, f::PseudoVoigtFit{T}) where {T<:Number}
+    xs = crv.x
+    ys = pvoigt_profile(xs, f)
+    mask = (f.center - f.width * 3) .<= xs .<= (f.center + f.width * 3)
+    # curve
     @series begin
-        color := :gray
-        label := nothing
-        linestyle := :dot
-        [f._peak_position, f._peak_position], [f._half_maximum_offset, f._half_maximum_offset + 2*f._half_maximum]
+        label --> nothing
+        crv
     end
-    # horizontal line marking fwhm
+    # fit
     @series begin
-        color := :gray
+        color := :red
         label := nothing
-        linewidth --> 2.0
-        [f._start_position, f._start_position + f.full_width], [f._half_maximum + f._half_maximum_offset, f._half_maximum + f._half_maximum_offset]
+        alpha := 0.5
+        xs[mask], ys[mask]
     end
-    # local baseline, if set
-    if !isnothing(f._local_baseline)
-        @series begin
-            color := :gray
-            label := nothing
-            linestyle := :dot
-            [f._local_baseline[1], f._local_baseline[2]], [f._local_baseline[3], f._local_baseline[4]]
-        end
+    # local baseline
+    @series begin
+        color := :red
+        label := nothing
+        alpha := 0.5
+        xs[mask], xs[mask] .* f.slope .+ f.offset
     end
 end
 
-@recipe function plot_recipe(curve::Curve{T}, fs::Vector{FWHM{T}}) where {T<:Number}
+@recipe function plot_recipe(crv::Curve{T}, fs::Vector{PseudoVoigtFit{T}}) where {T<:Number}
     for f in fs
         @series begin
-            f
+            crv, f
         end
     end
     @series begin
         color --> :blue
-        curve
+        crv
     end
 end
