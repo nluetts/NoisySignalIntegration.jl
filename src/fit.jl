@@ -1,3 +1,6 @@
+FIT_MAX_TRIES = 10
+FIT_SHUFFLE_GUESS = 0.05
+
 struct UncertainPseudoVoigtFit{T,N}
     area::Particles{T,N}
     center::Particles{T,N}
@@ -17,7 +20,14 @@ struct PseudoVoigtFit{T}
 end
 
 function get_draw(n, f::UncertainPseudoVoigtFit{T,N})::PseudoVoigtFit{T} where {T,N}
-    PseudoVoigtFit(f.area, f.center, f.width, f.mixing, f.offset, f.slope)
+    PseudoVoigtFit(
+        f.area.particles[n],
+        f.center.particles[n],
+        f.width.particles[n],
+        f.mixing.particles[n],
+        f.offset.particles[n],
+        f.slope.particles[n]
+    )
 end
 
 function Base.show(io::IO, ::MIME"text/plain", obj::UncertainPseudoVoigtFit)
@@ -42,15 +52,8 @@ end
 function pvoigt_profile(x, area, center, width, mixing, offset, slope)
     u = (x - center) / (width / 2)
 
-    # The Lorentzian fraction is calculated via a sigmoid function
-    # instead of capping the input mixing ratio to the range [0, 1].
-    # This is done for numerical stability when fitting.
-    # The factor 7 is chosen so that for the `mixing = -1` the mixing
-    # ratio is 99.9% Gaussian.
-    ratio = 1 / (1 + exp(-7 * mixing))
-
-    gaussian_term = (1 - ratio) * √log(2) / (width * √pi) * exp(-log(2) * u^2)
-    lorentzian_term = ratio / (pi * width * (1 + u^2))
+    gaussian_term = (1 - mixing) * √log(2) / (width * √pi) * exp(-log(2) * u^2)
+    lorentzian_term = mixing / (pi * width * (1 + u^2))
 
     return area * (gaussian_term + lorentzian_term) + offset + x * slope
 end
@@ -67,24 +70,25 @@ function pvoigt_profile(xs::S, pvoigt_fit::PseudoVoigtFit{T}) where {S<:Abstract
 end
 
 """Height of Pseudo-Voigt peak."""
-function pvoigt_peak(area, width, mixing_fraction)
-    area * ((1 - mixing_fraction) * √log(2) / (width * √pi) + (mixing_fraction / (width * pi)))
+function pvoigt_peak(area, width, mixing)
+    area * ((1 - mixing) * √log(2) / (width * √pi) + (mixing / (width * pi)))
 end
 
 
 function fit_pvoigt(
     curve::Curve{T},
     left::T,
-    right::T,
+    right::T;
+    guess=Nothing
 ) where {T<:AbstractFloat}
     mask = curve.x .> left .&& curve.x .<= right
     xs = curve.x[mask]
     ys = curve.y[mask]
 
     # Guess
-    guess = let
+    guess = isnothing(guess) ? let
         #! format: off
-        mixing   = 0.0 # 50-50 Gaussian to Lorentzian
+        mixing   = 0.5 # 50-50 Gaussian to Lorentzian
         height   = maximum(ys) - minimum(ys)
         center   = (right + left) * 0.5
         width    = abs(right - left) * 0.25 # 1/4 of the fit-window
@@ -94,10 +98,40 @@ function fit_pvoigt(
         #! format: on
 
         [area, center, width, mixing, offset, slope]
-    end
+    end : guess
 
-    params = curve_fit(pvoigt_profile, xs, ys, guess) |> coef
-    PseudoVoigtFit(params...)
+    # bounds
+    lower = [
+        0.0,    # area
+        left,   # center
+        0.0,    # width
+        0,      # mixing
+        -Inf,   # offset
+        -Inf,   # slope
+    ]
+    upper = [
+        Inf,   # area
+        right, # center
+        abs(right-left), # width
+        1,     # mixing
+        Inf,   # offset
+        Inf,   # slope
+    ]
+
+    for k in 1:FIT_MAX_TRIES
+        try
+            fit_result = curve_fit(pvoigt_profile, xs, ys, guess; upper=upper, lower=lower)
+            return PseudoVoigtFit(coef(fit_result)...)
+        catch e
+            @warn "Fitting failed with error: $(e)"
+            @info "Retrying fit with randomized guess ... ($k/$FIT_MAX_TRIES)"
+            # Randomize guess by adding a fraction of a standard deviation times the actual value
+            guess = [g + randn() * FIT_SHUFFLE_GUESS * g for g in guess]
+            if k == FIT_MAX_TRIES
+                throw(error("Could not fit curve in 10 trials, bailing out."))
+            end
+        end
+    end
 end
 
 function mc_fit(
@@ -109,12 +143,16 @@ function mc_fit(
     M != N && error("Samples sizes of bounds and uncertain curve incompatible ($N != $M)")
 
     pfits = Array{PseudoVoigtFit{Float64}}(undef, N, length(bnds))
-    for i ∈ 1:N
-        i % 1000 == 0 && print("Processing draw $i/$N \r")
-        cᵢ = get_draw(i, uc)
-        for (j, b) in enumerate(bnds)
+    # We have to go bounds first here, because otherwise the guess that
+    # is re-used from draw to draw will be applied to the wrong bound
+    for (j, b) in enumerate(bnds)
+        println("\nProcessing bound $j")
+        guess = nothing
+        for i ∈ 1:N
+            i % 1000 == 0 && print("Processing draw $i/$N \r")
+            cᵢ = get_draw(i, uc)
             xₗ, xᵣ = get_draw(i, b)
-            pfits[i, j] = fit_pvoigt(cᵢ, xₗ, xᵣ)
+            pfits[i, j] = fit_pvoigt(cᵢ, xₗ, xᵣ, guess=guess)
         end
     end
 
@@ -143,3 +181,5 @@ function mc_fit(
     end
     fit_results
 end
+
+mc_fit(uc::UncertainCurve{Float64,N}, bd::UncertainBound{Float64,M}) where {M,N} = mc_fit(uc, [bd])

@@ -1,5 +1,7 @@
 const PRIMARY_COLOR = :blue
 const SECONDARY_COLOR = :red
+OFFSET_FIT_PLOT = 0.75
+WIDTH_FIT_PLOT = 4.0
 
 
 # this function is required to plot integration areas
@@ -78,7 +80,6 @@ end
     local_baseline=false,
     bound=nothing,
     draw_band_centers=false,
-    draw_fwhm=false,
 ) where T
 
     (local_baseline && bound == nothing) && error("You have to provide a bound if local_baseline == true.") |> throw
@@ -141,13 +142,6 @@ end
             [bc, bc], [y0, y]
         end
     end
-
-    if draw_fwhm
-        baseline = local_baseline ? _local_baseline(crv.x, crv.y, xl, xr, bound) : nothing
-        @series begin
-            fwhm(crv, xl, xr, baseline)
-        end
-    end
 end
 
 
@@ -182,20 +176,24 @@ end
     subtract_baseline=true
 ) where {T,N}
 
+    # Be flexible here, if user gives a range, we draw these specific draws
+    padleft(range) = (max(0, minimum(draws)-1)):maximum(draws)
+    range = draws isa UnitRange ? padleft(draws) : 0:draws
+
     legend := :none
-    layout := (draws + 1, 1)
+    layout := (length(range), 1)
     link := :both
     size --> (500, 600)
 
     mean_uc = mean(uc)
-
-    for i ∈ 0:draws
+    
+    for (k, i) ∈ enumerate(range)
         for (j, b) in enumerate(bnds)
             @series begin
                 fillcolor := j % 2 == 1 ? :red : :orange
-                subplot := i + 1
+                subplot := k
                 bound := b
-                if i == 0
+                if k == 1
                     mean_uc, mean(b)...
                 else
                     get_draw(i, uc), get_draw(i, b)...
@@ -203,8 +201,8 @@ end
             end
         end
         @series begin
-            subplot := i + 1
-            if i == 0
+            subplot := k
+            if k == 1
                 # mean spectrum
                 seriescolor := SECONDARY_COLOR
                 yguide := "mean"
@@ -329,39 +327,151 @@ MonteCarloMeasurements.mcplot(uc::UncertainCurve; draws=10, alpha=0.5, kw...) = 
 # enable plotting of Fits
 # --------------------------------------------
 
-@recipe function plot_recipe(crv::Curve{T}, f::PseudoVoigtFit{T}) where {T<:Number}
-    xs = crv.x
-    ys = pvoigt_profile(xs, f)
-    mask = (f.center - f.width * 3) .<= xs .<= (f.center + f.width * 3)
-    # curve
-    @series begin
-        label --> nothing
-        crv
-    end
+@recipe function plot_recipe(f::PseudoVoigtFit{T}) where {T<:Number}
+    w = WIDTH_FIT_PLOT
+    #! format: off
+    left        = f.center - f.width * w
+    right       = f.center + f.width * w
+    span        = abs(right - left)
+    xs          = collect(left:(span/100):right)
+    ys          = pvoigt_profile(xs, f)
+    baseline    = xs .* f.slope .+ f.offset
+    peak_height = pvoigt_peak(f.area, f.width, f.mixing)
+    offset      = mean(baseline) + peak_height * OFFSET_FIT_PLOT
+    #! format: on
+
     # fit
     @series begin
-        color := :red
+        color := :black
         label := nothing
         alpha := 0.5
-        xs[mask], ys[mask]
+        fill := (baseline, SECONDARY_COLOR)
+        fillalpha := 0.2
+        linewidth := 0.0
+        xs, ys
     end
-    # local baseline
+    # baseline corrected peak
     @series begin
-        color := :red
+        color := SECONDARY_COLOR
         label := nothing
-        alpha := 0.5
-        xs[mask], xs[mask] .* f.slope .+ f.offset
+        xs, ys .- baseline .+ offset
+    end
+    # line marking peak width
+    @series begin
+        color := SECONDARY_COLOR
+        alpha := 0.25
+        label := nothing
+        [f.center - 0.5f.width, f.center + 0.5f.width], [1, 1] .* (offset + 0.5peak_height)
+    end
+    # line marking peak center and height
+    @series begin
+        color := SECONDARY_COLOR
+        alpha := 0.25
+        label := nothing
+        [f.center, f.center], [offset, offset + peak_height]
+    end
+    # line marking baseline
+    @series begin
+        color := SECONDARY_COLOR
+        alpha := 0.25
+        label := nothing
+        [f.center - w * f.width, f.center + w * f.width], [offset, offset]
     end
 end
 
 @recipe function plot_recipe(crv::Curve{T}, fs::Vector{PseudoVoigtFit{T}}) where {T<:Number}
     for f in fs
         @series begin
-            crv, f
+            f
         end
     end
     @series begin
-        color --> :blue
+        color --> PRIMARY_COLOR
         crv
+    end
+
+end
+
+# plot draws of curves alongside with draws of fits
+@recipe function plot_recipe(
+    uc::UncertainCurve{T,N},
+    fits::Vector{UncertainPseudoVoigtFit{T,N}}
+    ;
+    draws=3,
+) where {T,N}
+
+    # Be flexible here, if user gives a range, we draw these specific draws
+    range = draws isa UnitRange ? draws : 1:draws
+
+    legend := :none
+    layout := (length(draws), 1)
+    link := :both
+    size --> (500, 600)
+
+    for (k, i) ∈ enumerate(range)
+        for (j, f) in enumerate(fits)
+            @series begin
+                fillcolor := j % 2 == 1 ? :red : :orange
+                subplot := k
+                bound := f
+                get_draw(i, f)
+            end
+        end
+        @series begin
+            subplot := k
+            seriescolor := PRIMARY_COLOR
+            yguide := "sample $(i)"
+            get_draw(i, uc)
+        end
+    end
+end
+
+# plot histograms of fit-parameters
+@recipe function plot_recipe(
+    fit::UncertainPseudoVoigtFit{T,N}
+) where {T,N}
+
+    alpha --> 0.5
+    fill --> true
+    layout --> @layout [
+        a _ _ _ _ _;
+        a a _ _ _ _;
+        a a a _ _ _;
+        a a a a _ _;
+        a a a a a _;
+        a a a a a a;
+    ]
+    legend --> false
+    size --> (1000, 1000)
+    xrotation := 60
+
+    fields = (:area, :center, :width, :mixing, :offset, :slope)
+    for (j, fj) in enumerate(fields)
+        for (i, fi) in enumerate(fields)
+            if j < i
+                continue # we only want to plot the lower diagonal
+            end
+            if fi == fj
+                @series begin
+                    seriestype := :stephist
+                    ylabel --> "counts"
+                    if i == 6
+                        xlabel := String(fi)
+                    end
+                    getfield(fit, fi)
+                end
+            else
+                @series begin
+                    seriestype := :scatter
+                    if j == 6
+                    xlabel := String(fi)
+                    end
+                    if i == 1
+                        ylabel := String(fj)
+                    end
+                    getfield(fit, fi).particles, getfield(fit, fj).particles
+                end
+            end
+        end
     end
 end

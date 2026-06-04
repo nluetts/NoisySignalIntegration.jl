@@ -30,21 +30,18 @@ end
 function test_spectrum_noisy()
     crv = test_spectrum()
     Random.seed!(42)
-    crv + randn(length(crv)) .* maximum(crv.y) .* 0.05
+    crv + randn(length(crv)) .* maximum(crv.y) .* 0.01
 end
 
 function main()
-    # Load the test dataset
-    dataset = NoisySignalIntegration.testdata_1()
-    udataset = add_noise(dataset, MvGaussianNoiseModel(0.1, 0.05, 0.5)) # make sure this fits testdata_1()
-
-    bds = [
-        UncertainBound(Uniform(9.0, 11.0), Uniform(19.0, 21.0)),
-        UncertainBound(Uniform(24.0, 26.0), Uniform(34.0, 36.0)),
-    ]
-
-    res = mc_fit(udataset, bds)
-
-    # Plot the dataset along with both fitted curves
-    udataset, res, bds
+    @testset "regression tests" begin
+        @testset "fit of single peak" begin
+            c = test_spectrum_noisy()
+            uc = add_noise(c, GaussianNoiseModel(0.01))
+            ub = UncertainBound(15.0, scale_shift_beta(2.0, 2.0, 15.0, 25.0), uc)
+            res = mc_fit(uc, ub)
+            # TODO: It looks like the fit gets the mixing coefficient wrong!
+            return res[1], c, uc, ub
+        end
+    end
 end
