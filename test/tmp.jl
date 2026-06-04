@@ -39,7 +39,9 @@ function main()
     udataset = add_noise(dataset, MvGaussianNoiseModel(0.1, 0.05, 0.5)) # make sure this fits testdata_1()
 
     bds = [
-        UncertainBound(Uniform(9.0, 11.0), Uniform(19.0, 21.0)),
+        # TODO: for some reason, fitting the first bound/peak takes
+        # a lot more iterations and time than the second. Why is that?
+        UncertainBound(Uniform(11.0, 12.0), Uniform(18.0, 19.0)),
         UncertainBound(Uniform(24.0, 26.0), Uniform(34.0, 36.0)),
     ]
 

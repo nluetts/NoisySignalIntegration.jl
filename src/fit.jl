@@ -79,31 +79,82 @@ function fit_pvoigt(
     curve::Curve{T},
     left::T,
     right::T;
-    guess=Nothing
+    guess=nothing
 ) where {T<:AbstractFloat}
     mask = curve.x .> left .&& curve.x .<= right
     xs = curve.x[mask]
     ys = curve.y[mask]
 
+    # Normalize data, simpler guess and (hopefully) better numeric stability
+    xmin, xmean, xmax = minimum(xs), mean(xs), maximum(xs)
+    xspan = abs(xmax - xmin)
+    xt = @. (xs - xmean) / xspan
+    ymin, ymean, ymax = minimum(ys), mean(ys), maximum(ys)
+    yspan = abs(ymax - ymin)
+    yt = @. (ys - ymin) / yspan
+
+    # Note on normalizing the guess: Everything is rather simple, but
+    # the slope and offset need some thinking:
+    # 
+    # If x', y', m' and b' are coordinates and parameters in the
+    # transformed normalized coordinate system, we can transform via:
+    # 
+    # x' = (x - xmean) / xspan
+    # y' = (y - ymin) / yspan
+    # y' = m'x' + b'
+    # (y - ymin) / yspan = m'(x - xmean) / xspan + b'
+    # y = ymin + m' yspan/xspan (x - xmean) + b'yspan
+    # → m = m'yspan/xspan
+    # → b = ymin + b'yspan - m'yspan/xspan xmean
+    # → b = ymin + b'yspan - m xmean
+    # We can use these to transform the fitted parameters
+    # or invert the equations to a normalize the guess:
+    # m' = m xspan/yspan
+    # b' = (b - ymin + m xmean)/yspan
+
     # Guess
     guess = isnothing(guess) ? let
         #! format: off
         mixing   = 0.5 # 50-50 Gaussian to Lorentzian
-        height   = maximum(ys) - minimum(ys)
-        center   = (right + left) * 0.5
-        width    = abs(right - left) * 0.25 # 1/4 of the fit-window
+        height   = 1.0
+        center   = 0.0
+        width    = 0.2 # 1/3 of the fit-window
         area     = height / pvoigt_peak(1.0, width, mixing)
         offset   = 0.0
-        slope    = 0.0
+        # use start and end point as heuristic for baseline
+        slope    = yt[end] - yt[1]
         #! format: on
 
         [area, center, width, mixing, offset, slope]
-    end : guess
+    end : let
+        area, center, width, mixing, offset, slope = guess
+        # Normalize guess
+        area /= xspan * yspan
+        center = (center - xmean) / xspan
+        width /= xspan
+        # mind that the slope was not updated yet!
+        offset = (offset - ymin + slope * xmean) / yspan
+        slope *= xspan / yspan
+
+        [area, center, width, mixing, offset, slope]
+    end
+
+    # let
+    #     plot(curve)
+    #     area, center, width, mixing, offset, slope = guess
+    #     area *= xspan * yspan
+    #     center = center * xspan + xmean
+    #     width *= xspan
+    #     slope *= yspan / xspan
+    #     # mind that slope was already updated!
+    #     offset = ymin + yspan * offset - slope * xmean
+    #     plot!(PseudoVoigtFit(area, center, width, mixing, offset, slope)) |> display
+    # end
 
     # bounds
     lower = [
         0.0,    # area
-        left,   # center
+        -0.5,   # center
         0.0,    # width
         0,      # mixing
         -Inf,   # offset
@@ -111,8 +162,8 @@ function fit_pvoigt(
     ]
     upper = [
         Inf,   # area
-        right, # center
-        abs(right-left), # width
+        0.5,   # center
+        1.0,   # width
         1,     # mixing
         Inf,   # offset
         Inf,   # slope
@@ -120,10 +171,20 @@ function fit_pvoigt(
 
     for k in 1:FIT_MAX_TRIES
         try
-            fit_result = curve_fit(pvoigt_profile, xs, ys, guess; upper=upper, lower=lower)
-            return PseudoVoigtFit(coef(fit_result)...)
+            res = curve_fit(pvoigt_profile, xt, yt, guess; upper=upper, lower=lower, show_trace=true)
+            params = coef(res)
+            area, center, width, mixing, offset, slope = params
+            # Undo normalization
+            area *= xspan * yspan
+            center = center * xspan + xmean
+            width *= xspan
+            slope *= yspan / xspan
+            # mind that slope was already updated!
+            offset = ymin + yspan * offset - slope * xmean
+            return PseudoVoigtFit(area, center, width, mixing, offset, slope)
         catch e
             @warn "Fitting failed with error: $(e)"
+            @info "Current guess: $guess"
             @info "Retrying fit with randomized guess ... ($k/$FIT_MAX_TRIES)"
             # Randomize guess by adding a fraction of a standard deviation times the actual value
             guess = [g + randn() * FIT_SHUFFLE_GUESS * g for g in guess]
@@ -152,7 +213,12 @@ function mc_fit(
             i % 1000 == 0 && print("Processing draw $i/$N \r")
             cᵢ = get_draw(i, uc)
             xₗ, xᵣ = get_draw(i, b)
-            pfits[i, j] = fit_pvoigt(cᵢ, xₗ, xᵣ, guess=guess)
+            f = fit_pvoigt(cᵢ, xₗ, xᵣ, guess=guess)
+            guess = [f.area, f.center, f.width, f.mixing, f.offset, f.slope]
+            pfits[i, j] = f
+            if i == 10
+                throw("Testing ...")
+            end
         end
     end
 

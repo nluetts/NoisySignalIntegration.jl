@@ -40,7 +40,6 @@ function main()
             uc = add_noise(c, GaussianNoiseModel(0.01))
             ub = UncertainBound(15.0, scale_shift_beta(2.0, 2.0, 15.0, 25.0), uc)
             res = mc_fit(uc, ub)
-            # TODO: It looks like the fit gets the mixing coefficient wrong!
             return res[1], c, uc, ub
         end
     end
