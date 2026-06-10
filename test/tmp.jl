@@ -45,6 +45,8 @@ function main()
         UncertainBound(Uniform(24.0, 26.0), Uniform(34.0, 36.0)),
     ]
 
+    # TODO: Tipp by Martin: include a kwargs here that forces
+    # a specific mixing ratio, e.g. `mc_fit(udataset, bds; mixing=0.5)`
     res = mc_fit(udataset, bds)
 
     # Plot the dataset along with both fitted curves
